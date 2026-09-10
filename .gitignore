@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+.env
+.env.*
+
+# Django
+*.sqlite3
+media/
+staticfiles/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Editor
+.vscode/settings.json
+.vscode/tasks.json
+.idea/
+.DS_Store
+
+# Build
+build/
+dist/
+*.egg-info/
