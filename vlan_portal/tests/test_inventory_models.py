@@ -1,6 +1,9 @@
 from django.core.exceptions import ValidationError
+from django.core.management import call_command
 from django.test import SimpleTestCase
+from django.test import TestCase
 
+from discovery.models import PortObservation
 from inventory.models import Facility, Switch
 
 
@@ -65,3 +68,16 @@ class SwitchCleanTests(SimpleTestCase):
 
         with self.assertRaisesMessage(ValidationError, "cannot contain a cycle"):
             idf_02.clean()
+
+
+class SeedDemoCommandTests(TestCase):
+    def test_seed_demo_is_repeatable_and_creates_expected_topology(self):
+        call_command("seed_demo")
+        call_command("seed_demo")
+
+        self.assertEqual(Facility.objects.count(), 1)
+        self.assertEqual(Switch.objects.count(), 3)
+        self.assertEqual(PortObservation.objects.count(), 1)
+        idf_02 = Switch.objects.get(name="IDF-02")
+        self.assertEqual(idf_02.upstream_switch.name, "IDF-01")
+        self.assertEqual(idf_02.upstream_switch.upstream_switch.name, "MDF-01")
