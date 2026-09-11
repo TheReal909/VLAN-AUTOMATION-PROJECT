@@ -1,13 +1,10 @@
-{% extends "base.html" %}
-
-{% block title %}Home{% endblock %}
-
-{% block content %}
-  <p>Welcome to the VLAN automation portal.</p>
-  <ul>
-    <li>Inventory</li>
-    <li><a href="{% url 'discovery' %}">MAC lookup</a></li>
-    <li>Changes</li>
-    <li>Audit</li>
-  </ul>
+{% extends "base.html" %} {% block title %}Home{% endblock %} {% block content
+%}
+<p>Welcome to the VLAN automation portal.</p>
+<ul>
+  <li>Inventory</li>
+  <li><a href="{% url 'discovery' %}">MAC lookup</a></li>
+  <li>Changes</li>
+  <li>Audit</li>
+</ul>
 {% endblock %}
