@@ -1,0 +1,28 @@
+{% extends "base.html" %} {% block title %}MAC Lookup | VLAN Automation Portal{%
+endblock %} {% block content %}
+<h2>Find a device</h2>
+<p>Choose a facility and search for a device MAC address.</p>
+<form method="get">
+  {{ form.as_p }}
+  <button type="submit">Search</button>
+</form>
+
+{% if searched and form.is_valid %} {% if observation %}
+<section aria-label="Lookup result">
+  <h2>Device found</h2>
+  <dl>
+    <dt>MAC address</dt>
+    <dd>{{ observation.mac_address }}</dd>
+    <dt>Switch</dt>
+    <dd>{{ observation.switch.name }}</dd>
+    <dt>Interface</dt>
+    <dd>{{ observation.interface_name }}</dd>
+    <dt>Current VLAN</dt>
+    <dd>{{ observation.vlan_id }}</dd>
+    <dt>Observed</dt>
+    <dd>{{ observation.observed_at }}</dd>
+  </dl>
+</section>
+{% else %}
+<p>No observation was found for that MAC in the selected facility.</p>
+{% endif %} {% endif %} {% endblock %}
