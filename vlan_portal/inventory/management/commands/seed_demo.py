@@ -89,7 +89,6 @@ class Command(BaseCommand):
                 "closet_role": closet_role,
                 "upstream_switch": upstream_switch,
                 "model_family": Switch.ModelFamily.ICX_7150,
-                "stack_member_count": 1,
                 "fastiron_version": "10.0.10",
                 "location_note": "Sanitized demo record",
                 "is_active": True,

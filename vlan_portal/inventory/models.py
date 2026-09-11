@@ -59,10 +59,6 @@ class Switch(ValidatedModel):
         help_text="Direct upstream managed logical switch; may be an MDF or another IDF.",
     )
     model_family = models.CharField(max_length=20, choices=ModelFamily.choices)
-    stack_member_count = models.PositiveSmallIntegerField(
-        default=1, validators=[MinValueValidator(1), MaxValueValidator(16)],
-        help_text="Physical units in this logical stack. Does not create separate switch rows.",
-    )
     fastiron_version = models.CharField(max_length=80, blank=True, help_text="Example: 10.0.10")
     location_note = models.CharField(max_length=255, blank=True)
     is_active = models.BooleanField(default=True)
