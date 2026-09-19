@@ -75,9 +75,7 @@ class Switch(ValidatedModel):
             raise ValidationError({"upstream_switch": "The upstream switch must be in the same facility."})
         if self.closet_role == self.ClosetRole.MDF and self.upstream_switch:
             raise ValidationError({"upstream_switch": "An MDF switch should not have an upstream switch."})
-        if self.closet_role == self.ClosetRole.IDF and not self.upstream_switch:
-            raise ValidationError({"upstream_switch": "An IDF switch must have an upstream switch."})
-        if self.closet_role == self.ClosetRole.IDF:
+        if self.upstream_switch:
             seen_switches = {self.pk if self.pk is not None else id(self)}
             upstream_switch = self.upstream_switch
             while upstream_switch:
@@ -88,11 +86,6 @@ class Switch(ValidatedModel):
                 if upstream_switch.facility_id != self.facility_id:
                     raise ValidationError({"upstream_switch": "The upstream switch must be in the same facility."})
                 upstream_switch = upstream_switch.upstream_switch
-            final_upstream = self.upstream_switch
-            while final_upstream and final_upstream.upstream_switch:
-                final_upstream = final_upstream.upstream_switch
-            if final_upstream and final_upstream.closet_role != self.ClosetRole.MDF:
-                raise ValidationError({"upstream_switch": "The upstream switch hierarchy must end at an MDF switch."})
 
     def save(self, *args, **kwargs):
         self.hostname = self.hostname.lower().strip()

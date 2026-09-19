@@ -74,8 +74,9 @@ class Command(BaseCommand):
         for row_number, values in enumerate(sheet.iter_rows(values_only=True), 2):
             record = {name: values[index] if index < len(values) else None for name, index in indexes.items()}
             if (
-                str(record["switch_name"] or "").strip().lower() == "caption"
-                or str(record["management_ip"] or "").strip().lower() == "ip address"
+                str(record["switch_name"] or "").strip().lower() in {"caption", "switch_name"}
+                or str(record["management_ip"] or "").strip().lower() in {"ip address", "management_ip"}
+                or str(record["upstream_switch"] or "").strip().lower() == "upstream_switch"
             ):
                 continue
             if not any(value not in (None, "") for value in record.values()):
@@ -86,7 +87,6 @@ class Command(BaseCommand):
 
     @staticmethod
     def _validate_switch_rows(rows, errors):
-        known_codes = {str(row["facility_code"]).strip().upper() for row in rows if row["facility_code"]}
         names = Counter()
         hostnames = Counter()
         addresses = Counter()
@@ -121,8 +121,6 @@ class Command(BaseCommand):
                 errors.append(f"row {line}: closet_role must be MDF or IDF, got '{role}'.")
             if family not in valid_families:
                 errors.append(f"row {line}: unsupported model_family '{family}'.")
-            if role == Switch.ClosetRole.IDF and not upstream:
-                errors.append(f"row {line}: IDF switch '{switch_name}' has no upstream_switch.")
             if upstream and upstream == switch_name:
                 errors.append(f"row {line}: switch cannot be its own upstream_switch.")
 

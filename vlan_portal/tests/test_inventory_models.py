@@ -44,6 +44,19 @@ class SwitchCleanTests(SimpleTestCase):
 
         idf_02.clean()
 
+    def test_idf_without_upstream_is_valid_for_dynamic_discovery(self):
+        idf = Switch(
+            pk=2,
+            facility=self.facility,
+            name="IDF-01",
+            hostname="idf-01.example.test",
+            management_ip="192.0.2.2",
+            closet_role=Switch.ClosetRole.IDF,
+            model_family=Switch.ModelFamily.ICX_7150,
+        )
+
+        idf.clean()
+
     def test_idf_upstream_hierarchy_cannot_contain_a_cycle(self):
         idf_01 = Switch(
             pk=2,
