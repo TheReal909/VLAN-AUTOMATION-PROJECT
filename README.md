@@ -34,6 +34,17 @@ This repository lays out a Django-based VLAN management portal with separate app
    python vlan_portal/manage.py runserver
    ```
 
+## Inventory validation
+
+Validate an XLSX inventory without changing the database:
+
+```bash
+python vlan_portal/manage.py validate_inventory /path/to/inventory.xlsx
+```
+
+The command checks switch identity, management IPs, model families, MDF/IDF roles,
+upstream references, and VLAN policy rows. It is intentionally read-only.
+
 ## Database
 
 This project expects PostgreSQL running locally. A typical configuration is:
