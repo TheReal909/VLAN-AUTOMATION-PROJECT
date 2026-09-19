@@ -1,6 +1,6 @@
 from django.test import SimpleTestCase
 
-from discovery.parsers import normalize_mac, parse_interface_is_trunk, parse_lldp_neighbors, parse_mac_table
+from discovery.parsers import normalize_mac, parse_interface_is_trunk, parse_lldp_neighbors, parse_mac_table, parse_port_name
 
 
 class DiscoveryParserTests(SimpleTestCase):
@@ -41,3 +41,9 @@ class DiscoveryParserTests(SimpleTestCase):
         self.assertTrue(parse_interface_is_trunk("Switchport mode: trunk"))
         self.assertFalse(parse_interface_is_trunk("Port type: access"))
         self.assertIsNone(parse_interface_is_trunk("Interface is up"))
+
+    def test_parse_port_name(self):
+        self.assertEqual(
+            parse_port_name("Port name: C2-CP_UPLNK_PT_IDF"),
+            "C2-CP_UPLNK_PT_IDF",
+        )

@@ -18,8 +18,8 @@ class FakeConnector:
     def find_neighbors(self, switch):
         return self.neighbors.get(switch.name, [])
 
-    def is_trunk(self, switch, interface_name):
-        return interface_name.endswith("48")
+    def find_port_name(self, switch, interface_name):
+        return "C2-CP_UPLNK_PT_IDF" if interface_name.endswith("48") else "User device"
 
 
 class MacDiscoveryServiceTests(TestCase):
@@ -61,6 +61,22 @@ class MacDiscoveryServiceTests(TestCase):
         self.assertEqual(result.entry.vlan_id, 201)
         self.assertEqual([switch.name for switch in result.path], ["MDF-01", "IDF-01"])
         self.assertEqual(connector.queried_switches, ["MDF-01", "IDF-01"])
+
+    def test_service_stops_at_mdf_endpoint_even_when_vlan_is_tagged(self):
+        mac = "aa:bb:cc:dd:ee:ff"
+        connector = FakeConnector(
+            mac_results={"MDF-01": [MacTableEntry(mac, 300, "1/1/20", False)]},
+            neighbors={
+                "MDF-01": [LldpNeighbor("1/1/48", "IDF-01", "192.0.2.11")],
+            },
+        )
+
+        result = MacDiscoveryService(connector).locate(self.facility, mac)
+
+        self.assertEqual(result.switch, self.mdf)
+        self.assertEqual(result.entry.interface_name, "1/1/20")
+        self.assertEqual(result.entry.vlan_id, 300)
+        self.assertEqual(connector.queried_switches, ["MDF-01"])
 
     def test_service_rejects_unresolved_uplink(self):
         mac = "aa:bb:cc:dd:ee:ff"

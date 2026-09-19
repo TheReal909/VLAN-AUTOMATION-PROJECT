@@ -6,9 +6,9 @@ from inventory.models import Facility, Switch
 from .parsers import (
     LldpNeighbor,
     MacTableEntry,
-    parse_interface_is_trunk,
     parse_lldp_neighbors,
     parse_mac_table,
+    parse_port_name,
 )
 
 
@@ -21,7 +21,7 @@ class ReadOnlySwitchConnector(Protocol):
 
     def find_neighbors(self, switch: Switch) -> list[LldpNeighbor]: ...
 
-    def is_trunk(self, switch: Switch, interface_name: str) -> bool | None: ...
+    def find_port_name(self, switch: Switch, interface_name: str) -> str: ...
 
 
 class NetmikoReadOnlyConnector:
@@ -61,8 +61,8 @@ class NetmikoReadOnlyConnector:
     def find_neighbors(self, switch: Switch) -> list[LldpNeighbor]:
         return parse_lldp_neighbors(self._send(switch, "show lldp neighbors detail"))
 
-    def is_trunk(self, switch: Switch, interface_name: str) -> bool | None:
-        return parse_interface_is_trunk(self._send(switch, f"show interfaces {interface_name}"))
+    def find_port_name(self, switch: Switch, interface_name: str) -> str:
+        return parse_port_name(self._send(switch, f"show interfaces {interface_name}"))
 
 
 @dataclass(frozen=True)
@@ -98,22 +98,30 @@ class MacDiscoveryService:
             if not entries:
                 raise DiscoveryError(f"MAC {mac_address} was not found on {current.name}.")
 
+            neighbors = self.connector.find_neighbors(current)
+            neighbors_by_interface = {
+                neighbor.interface_name: neighbor for neighbor in neighbors
+            }
             endpoint_entries = []
-            trunk_entries = []
+            uplink_entries = []
             for entry in entries:
-                is_trunk = self.connector.is_trunk(current, entry.interface_name)
-                if is_trunk is True:
-                    trunk_entries.append(entry)
-                elif is_trunk is False:
+                port_name = self.connector.find_port_name(current, entry.interface_name)
+                has_uplink_name = "UPLNK" in port_name.upper()
+                has_managed_neighbor = entry.interface_name in neighbors_by_interface
+                if has_uplink_name or has_managed_neighbor:
+                    uplink_entries.append(entry)
+                else:
                     endpoint_entries.append(entry)
-            if not endpoint_entries and not trunk_entries:
+            if not endpoint_entries and not uplink_entries:
                 raise DiscoveryError(f"Could not verify the port role on {current.name}.")
+            if endpoint_entries and uplink_entries:
+                raise DiscoveryError(f"MAC {mac_address} has conflicting endpoint and uplink results on {current.name}.")
             if len(endpoint_entries) == 1:
                 return DiscoveryResult(mac_address, current, endpoint_entries[0], tuple(path))
             if len(endpoint_entries) > 1:
                 raise DiscoveryError(f"MAC {mac_address} was found on multiple endpoint ports on {current.name}.")
 
-            neighbor = self._resolve_neighbor(current, trunk_entries, facility, visited)
+            neighbor = self._resolve_neighbor(current, uplink_entries, facility, visited, neighbors_by_interface)
             if neighbor is None:
                 raise DiscoveryError(f"No managed LLDP neighbor was found for {current.name}.")
             current = neighbor
@@ -125,10 +133,13 @@ class MacDiscoveryService:
         entries: list[MacTableEntry],
         facility: Facility,
         visited: set[int],
+        neighbors_by_interface: dict[str, LldpNeighbor],
     ) -> Switch | None:
-        neighbors = self.connector.find_neighbors(current)
         trunk_interfaces = {entry.interface_name for entry in entries}
-        candidates = [neighbor for neighbor in neighbors if neighbor.interface_name in trunk_interfaces]
+        candidates = [
+            neighbor for interface_name, neighbor in neighbors_by_interface.items()
+            if interface_name in trunk_interfaces
+        ]
         if len(candidates) != 1:
             return None
         neighbor = candidates[0]

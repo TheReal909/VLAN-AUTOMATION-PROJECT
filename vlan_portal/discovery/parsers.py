@@ -88,3 +88,8 @@ def parse_interface_is_trunk(output: str) -> bool | None:
     if re.search(r"\b(?:tagging|port type|switchport mode)\s*[:：]?\s*(?:untagged|access)", normalized):
         return False
     return None
+
+
+def parse_port_name(output: str) -> str:
+    match = re.search(r"(?:Port name|Port Name|Name)\s*[:：]\s*(.*\S)\s*$", output, re.IGNORECASE | re.MULTILINE)
+    return match.group(1).strip() if match else ""
