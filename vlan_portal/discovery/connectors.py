@@ -26,18 +26,23 @@ class NetmikoReadOnlyConnector:
     def _send(self, switch: Switch, command: str) -> str:
         from netmiko import ConnectHandler
 
-        connection = ConnectHandler(
-            device_type="brocade_fastiron",
-            host=switch.management_ip,
-            username=self.username,
-            password=self.password,
-            port=self.port,
-            conn_timeout=self.timeout,
-            auth_timeout=self.timeout,
-            banner_timeout=self.timeout,
-        )
+        try:
+            connection = ConnectHandler(
+                device_type="brocade_fastiron",
+                host=switch.management_ip,
+                username=self.username,
+                password=self.password,
+                port=self.port,
+                conn_timeout=self.timeout,
+                auth_timeout=self.timeout,
+                banner_timeout=self.timeout,
+            )
+        except Exception as exc:
+            raise DiscoveryError(f"Could not connect to {switch.name} for read-only discovery.") from exc
         try:
             return connection.send_command(command, read_timeout=self.timeout)
+        except Exception as exc:
+            raise DiscoveryError(f"Read-only discovery failed on {switch.name}.") from exc
         finally:
             connection.disconnect()
 

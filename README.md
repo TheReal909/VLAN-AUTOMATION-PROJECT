@@ -45,6 +45,16 @@ python vlan_portal/manage.py validate_inventory /path/to/inventory.xlsx
 The command checks switch identity, management IPs, model families, MDF/IDF roles,
 upstream references, and VLAN policy rows. It is intentionally read-only.
 
+Live discovery uses read-only SSH credentials supplied through local environment
+variables. Never commit these values:
+
+```text
+DISCOVERY_SSH_USERNAME=readonly-user
+DISCOVERY_SSH_PASSWORD=secret
+DISCOVERY_SSH_PORT=22
+DISCOVERY_SSH_TIMEOUT=10
+```
+
 ## Database
 
 This project expects PostgreSQL running locally. A typical configuration is:

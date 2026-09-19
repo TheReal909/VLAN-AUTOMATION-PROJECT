@@ -1,3 +1,7 @@
+from types import SimpleNamespace
+from unittest.mock import patch
+
+from django.test import override_settings
 from django.test import TestCase
 from django.urls import reverse
 
@@ -51,3 +55,39 @@ class MacLookupTests(TestCase):
 
         self.assertContains(response, "No observation was found")
         self.assertNotContains(response, "IDF-02")
+
+    @override_settings(DISCOVERY_SSH_USERNAME="reader", DISCOVERY_SSH_PASSWORD="secret")
+    @patch("discovery.views.MacDiscoveryService.locate")
+    def test_live_discovery_displays_path_without_writing(self, locate):
+        locate.return_value = SimpleNamespace(
+            switch=self.switch,
+            entry=SimpleNamespace(interface_name="2/1/15", vlan_id=201),
+            path=(self.mdf, self.switch),
+        )
+
+        response = self.client.post(
+            reverse("discovery"),
+            {
+                "facility": self.facility.pk,
+                "mac_address": "02:00:00:00:00:01",
+                "action": "live-discovery",
+            },
+        )
+
+        self.assertContains(response, "Live discovery result")
+        self.assertContains(response, "IDF-02")
+        self.assertContains(response, "MDF-01")
+        self.assertContains(response, "2/1/15")
+        locate.assert_called_once()
+
+    def test_live_discovery_requires_credentials(self):
+        response = self.client.post(
+            reverse("discovery"),
+            {
+                "facility": self.facility.pk,
+                "mac_address": "02:00:00:00:00:01",
+                "action": "live-discovery",
+            },
+        )
+
+        self.assertContains(response, "not configured with SSH credentials")

@@ -77,6 +77,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://localhost:6379/0")
 CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default="redis://localhost:6379/0")
 
+DISCOVERY_SSH_USERNAME = env("DISCOVERY_SSH_USERNAME", default="")
+DISCOVERY_SSH_PASSWORD = env("DISCOVERY_SSH_PASSWORD", default="")
+DISCOVERY_SSH_PORT = env.int("DISCOVERY_SSH_PORT", default=22)
+DISCOVERY_SSH_TIMEOUT = env.int("DISCOVERY_SSH_TIMEOUT", default=10)
+
 # Optional LDAP configuration for direct AD/LDAPS auth
 LDAP_SERVER_URI = env("LDAP_SERVER_URI", default="")
 LDAP_BIND_DN = env("LDAP_BIND_DN", default="")

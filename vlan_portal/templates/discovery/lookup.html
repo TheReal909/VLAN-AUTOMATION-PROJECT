@@ -3,7 +3,14 @@
 <p>Choose a facility and search for a device MAC address.</p>
 <form method="get">
   {{ form.as_p }}
-  <button type="submit">Search</button>
+  <button type="submit">Search stored observations</button>
+</form>
+
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <input type="hidden" name="action" value="live-discovery">
+  <button type="submit">Run live discovery</button>
 </form>
 
 {% if searched and form.is_valid %} {% if observation %}
@@ -24,4 +31,30 @@
 </section>
 {% else %}
 <p>No observation was found for that MAC in the selected facility.</p>
-{% endif %} {% endif %} {% endblock %}
+{% endif %}
+{% endif %}
+
+{% if live_error %}
+  <p role="alert">{{ live_error }}</p>
+{% endif %}
+
+{% if live_result %}
+  <section aria-label="Live discovery result">
+    <h2>Live discovery result</h2>
+    <dl>
+      <dt>Switch</dt>
+      <dd>{{ live_result.switch.name }}</dd>
+      <dt>Interface</dt>
+      <dd>{{ live_result.entry.interface_name }}</dd>
+      <dt>Current VLAN</dt>
+      <dd>{{ live_result.entry.vlan_id }}</dd>
+      <dt>Path</dt>
+      <dd>
+        {% for switch in live_result.path %}
+          {{ switch.name }}{% if not forloop.last %} &rarr; {% endif %}
+        {% endfor %}
+      </dd>
+    </dl>
+  </section>
+{% endif %}
+{% endblock %}
