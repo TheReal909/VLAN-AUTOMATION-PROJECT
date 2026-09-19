@@ -18,6 +18,9 @@ class FakeConnector:
     def find_neighbors(self, switch):
         return self.neighbors.get(switch.name, [])
 
+    def is_trunk(self, switch, interface_name):
+        return interface_name.endswith("48")
+
 
 class MacDiscoveryServiceTests(TestCase):
     def setUp(self):

@@ -79,3 +79,12 @@ def parse_lldp_neighbors(output: str) -> list[LldpNeighbor]:
     if current_interface and current_name:
         neighbors.append(LldpNeighbor(current_interface, current_name, current_ip))
     return neighbors
+
+
+def parse_interface_is_trunk(output: str) -> bool | None:
+    normalized = output.lower()
+    if re.search(r"\b(?:tagging|port type|switchport mode)\s*[:：]?\s*(?:tagged|trunk)", normalized):
+        return True
+    if re.search(r"\b(?:tagging|port type|switchport mode)\s*[:：]?\s*(?:untagged|access)", normalized):
+        return False
+    return None
