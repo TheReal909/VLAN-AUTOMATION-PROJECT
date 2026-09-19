@@ -60,6 +60,7 @@ class MacLookupTests(TestCase):
     @patch("discovery.views.MacDiscoveryService.locate")
     def test_live_discovery_displays_path_without_writing(self, locate):
         locate.return_value = SimpleNamespace(
+            mac_address="02:00:00:00:00:01",
             switch=self.switch,
             entry=SimpleNamespace(interface_name="2/1/15", vlan_id=201),
             path=(self.mdf, self.switch),
@@ -79,6 +80,10 @@ class MacLookupTests(TestCase):
         self.assertContains(response, "MDF-01")
         self.assertContains(response, "2/1/15")
         locate.assert_called_once()
+        observation = PortObservation.objects.get(mac_address="02:00:00:00:00:01")
+        self.assertEqual(observation.switch, self.switch)
+        self.assertEqual(observation.interface_name, "2/1/15")
+        self.assertEqual(observation.vlan_id, 201)
 
     def test_live_discovery_requires_credentials(self):
         response = self.client.post(

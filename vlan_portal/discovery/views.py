@@ -35,6 +35,14 @@ def index(request):
                     live_result = MacDiscoveryService(connector).locate(
                         form.cleaned_data["facility"], form.cleaned_data["mac_address"]
                     )
+                    observation, _ = PortObservation.objects.update_or_create(
+                        mac_address=live_result.mac_address,
+                        defaults={
+                            "switch": live_result.switch,
+                            "interface_name": live_result.entry.interface_name,
+                            "vlan_id": live_result.entry.vlan_id,
+                        },
+                    )
                 except DiscoveryError as exc:
                     live_error = str(exc)
     return render(
