@@ -4,7 +4,7 @@ from django.test import SimpleTestCase
 from django.test import TestCase
 
 from discovery.models import PortObservation
-from inventory.models import Facility, Switch
+from inventory.models import Facility, Switch, VlanProfile
 
 
 class SwitchCleanTests(SimpleTestCase):
@@ -81,3 +81,15 @@ class SeedDemoCommandTests(TestCase):
         idf_02 = Switch.objects.get(name="IDF-02")
         self.assertEqual(idf_02.upstream_switch.name, "IDF-01")
         self.assertEqual(idf_02.upstream_switch.upstream_switch.name, "MDF-01")
+
+    def test_vlan_one_is_a_manual_change_target_even_when_policy_controlled(self):
+        vlan_one = VlanProfile.objects.create(
+            facility=Facility.objects.create(code="F19115", name="VLAN 1 Test"),
+            label="Internal",
+            vlan_id=1,
+            assignment_mode=VlanProfile.AssignmentMode.POLICY_CONTROLLED,
+            requester_ad_group="GG-Network-Internal",
+            allow_helpdesk_port_change=True,
+        )
+
+        self.assertTrue(vlan_one.is_manually_changeable)

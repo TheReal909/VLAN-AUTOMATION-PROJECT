@@ -124,7 +124,11 @@ class VlanProfile(ValidatedModel):
 
     def clean(self):
         super().clean()
-        if self.assignment_mode == self.AssignmentMode.POLICY_CONTROLLED and self.allow_helpdesk_port_change:
+        if (
+            self.assignment_mode == self.AssignmentMode.POLICY_CONTROLLED
+            and self.allow_helpdesk_port_change
+            and self.vlan_id != 1
+        ):
             raise ValidationError({"allow_helpdesk_port_change": "Policy-controlled VLANs cannot be changed manually by helpdesk."})
 
     def save(self, *args, **kwargs):
@@ -134,7 +138,9 @@ class VlanProfile(ValidatedModel):
 
     @property
     def is_manually_changeable(self):
-        return self.is_active and self.assignment_mode == self.AssignmentMode.STATIC and self.allow_helpdesk_port_change
+        return self.is_active and self.allow_helpdesk_port_change and (
+            self.assignment_mode == self.AssignmentMode.STATIC or self.vlan_id == 1
+        )
 
     def __str__(self):
         return f"{self.facility.code}: {self.label} (VLAN {self.vlan_id})"

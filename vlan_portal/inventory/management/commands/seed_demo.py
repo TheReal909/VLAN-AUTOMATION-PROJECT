@@ -57,6 +57,18 @@ class Command(BaseCommand):
         )
         VlanProfile.objects.update_or_create(
             facility=facility,
+            label="Internal",
+            defaults={
+                "vlan_id": 1,
+                "assignment_mode": VlanProfile.AssignmentMode.POLICY_CONTROLLED,
+                "requester_ad_group": "GG-Network-Internal",
+                "allow_helpdesk_port_change": True,
+                "description": "VLAN 1 is an explicit helpdesk migration target; authentication continues in the background.",
+                "is_active": True,
+            },
+        )
+        VlanProfile.objects.update_or_create(
+            facility=facility,
             label="Voice",
             defaults={
                 "vlan_id": 130,
