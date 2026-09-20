@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
+from audit.models import AuditLog
 from changes.models import VlanChangeLog
 from discovery.models import PortObservation
 from inventory.models import Facility, Switch, VlanProfile
@@ -66,6 +67,10 @@ class VlanChangeWorkflowTests(TestCase):
         change = VlanChangeLog.objects.get()
         self.assertEqual(change.status, VlanChangeLog.Status.PENDING)
         self.assertEqual(change.requested_vlan, self.target_vlan)
+        audit = AuditLog.objects.get()
+        self.assertEqual(audit.event_type, AuditLog.EventType.VLAN_CHANGE)
+        self.assertEqual(audit.detail["action"], "request_created")
+        self.assertEqual(audit.detail["requested_vlan"], 1)
 
     def test_policy_controlled_non_vlan_one_is_not_offered(self):
         self.client.login(username="agent", password="test-password")
