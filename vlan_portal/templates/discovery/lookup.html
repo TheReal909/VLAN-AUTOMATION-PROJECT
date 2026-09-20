@@ -28,6 +28,9 @@
     <dt>Observed</dt>
     <dd>{{ observation.observed_at }}</dd>
   </dl>
+  {% if user.is_authenticated %}
+    <p><a href="{% url 'changes-request' observation.id %}">Request a VLAN change</a></p>
+  {% endif %}
 </section>
 {% else %}
 <p>No observation was found for that MAC in the selected facility.</p>

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}VLAN Change Requested{% endblock %}
+
+{% block content %}
+  {% if change %}
+    <h2>VLAN change request created</h2>
+    <p>The request is pending approval and has not changed the switch.</p>
+    <dl>
+      <dt>MAC address</dt>
+      <dd>{{ change.mac_address }}</dd>
+      <dt>Switch</dt>
+      <dd>{{ change.switch.name }}</dd>
+      <dt>Interface</dt>
+      <dd>{{ change.interface_name }}</dd>
+      <dt>Change</dt>
+      <dd>VLAN {{ change.previous_vlan.vlan_id }} to VLAN {{ change.requested_vlan.vlan_id }}</dd>
+      <dt>Status</dt>
+      <dd>{{ change.status }}</dd>
+    </dl>
+  {% else %}
+    <p>No change request was found.</p>
+  {% endif %}
+{% endblock %}

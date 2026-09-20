@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Request VLAN Change{% endblock %}
+
+{% block content %}
+  <h2>Request VLAN change</h2>
+  <dl>
+    <dt>MAC address</dt>
+    <dd>{{ observation.mac_address }}</dd>
+    <dt>Switch</dt>
+    <dd>{{ observation.switch.name }}</dd>
+    <dt>Interface</dt>
+    <dd>{{ observation.interface_name }}</dd>
+    <dt>Current VLAN</dt>
+    <dd>{{ observation.vlan_id }}</dd>
+  </dl>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Create pending request</button>
+  </form>
+{% endblock %}
