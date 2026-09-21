@@ -62,6 +62,27 @@ CHANGE_SSH_PORT=22
 CHANGE_SSH_TIMEOUT=10
 ```
 
+## Local service monitoring
+
+Use Homebrew to see local service state:
+
+```bash
+brew services list
+redis-cli ping
+pg_isready -h localhost -p 5432
+```
+
+Start the Celery monitoring dashboard with Flower from the project directory:
+
+```bash
+./.venv/bin/flower --app=config.celery:app --port=5555
+```
+
+Open `http://127.0.0.1:5555/` to view workers, queues, task history, and task
+states. Flower does not replace PostgreSQL or Redis administration tools; use
+pgAdmin/Postico for PostgreSQL and Redis Insight for Redis when you need a
+database-oriented visual interface.
+
 ## Database
 
 This project expects PostgreSQL running locally. A typical configuration is:
