@@ -56,6 +56,8 @@ class ChangeExecutionTests(TestCase):
             previous_vlan=self.previous_vlan,
             requested_vlan=self.requested_vlan,
         )
+        self.change.approve(self.user)
+        self.change.save(update_fields=["status", "approved_by", "approved_at"])
 
     @override_settings(CHANGE_EXECUTION_ENABLED=True)
     def test_verified_change_becomes_applied(self):
@@ -85,4 +87,4 @@ class ChangeExecutionTests(TestCase):
             execute_pending_change(self.change.pk, FakeChangeConnector())
 
         self.change.refresh_from_db()
-        self.assertEqual(self.change.status, VlanChangeLog.Status.PENDING)
+        self.assertEqual(self.change.status, VlanChangeLog.Status.APPROVED)

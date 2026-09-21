@@ -33,8 +33,8 @@ def execute_pending_change(change_id: int, connector: VlanChangeConnector) -> Ex
             .select_related("switch", "previous_vlan", "requested_vlan")
             .get(pk=change_id)
         )
-        if change.status != VlanChangeLog.Status.PENDING:
-            raise ChangeExecutionError(f"Change {change_id} is not pending.")
+        if change.status != VlanChangeLog.Status.APPROVED:
+            raise ChangeExecutionError(f"Change {change_id} is not approved.")
     if not settings.CHANGE_EXECUTION_ENABLED:
         raise ChangeExecutionError("Change execution is disabled by configuration.")
 
