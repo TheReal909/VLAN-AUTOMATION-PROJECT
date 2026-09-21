@@ -6,11 +6,22 @@ from changes.models import VlanChangeLog
 class FastIronVlanChangeConnector:
     """Apply and verify an access-port VLAN change on a FastIron switch."""
 
-    def __init__(self, username: str, password: str, *, port: int = 22, timeout: int = 10):
+    def __init__(
+        self,
+        username: str,
+        password: str,
+        *,
+        port: int = 22,
+        timeout: int = 10,
+        command_mode: str = "legacy",
+    ):
         self.username = username
         self.password = password
         self.port = port
         self.timeout = timeout
+        if command_mode not in {"legacy", "move"}:
+            raise ValueError("command_mode must be 'legacy' or 'move'")
+        self.command_mode = command_mode
 
     def _connect(self, change: VlanChangeLog):
         from netmiko import ConnectHandler
@@ -29,15 +40,24 @@ class FastIronVlanChangeConnector:
     def apply(self, change: VlanChangeLog) -> None:
         connection = self._connect(change)
         try:
-            output = connection.send_config_set(
-                [
+            if self.command_mode == "legacy":
+                commands = [
+                    f"interface ethernet {change.interface_name}",
+                    "exit",
+                    f"vlan {change.previous_vlan.vlan_id}",
+                    f"no untagged ethernet {change.interface_name}",
+                    f"vlan {change.requested_vlan.vlan_id}",
+                    f"untagged ethernet {change.interface_name}",
+                    "end",
+                ]
+            else:
+                commands = [
                     f"interface ethernet {change.interface_name}",
                     f"vlan-config move untagged {change.requested_vlan.vlan_id}",
-                ],
-                exit_config_mode=False,
-            )
+                ]
+            output = connection.send_config_set(commands, exit_config_mode=False)
             if "Added untagged port" not in output:
-                raise RuntimeError("Switch did not confirm the untagged VLAN move.")
+                raise RuntimeError("Switch did not confirm the untagged VLAN assignment.")
         finally:
             connection.disconnect()
 

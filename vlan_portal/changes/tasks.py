@@ -14,6 +14,7 @@ def execute_vlan_change(self, change_id: int):
         settings.CHANGE_SSH_PASSWORD,
         port=settings.CHANGE_SSH_PORT,
         timeout=settings.CHANGE_SSH_TIMEOUT,
+        command_mode=settings.CHANGE_COMMAND_MODE,
     )
     try:
         result = execute_pending_change(change_id, connector)
