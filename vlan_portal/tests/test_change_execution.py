@@ -1,6 +1,11 @@
+from unittest.mock import patch
+
+from django.contrib import admin
 from django.test import TestCase, override_settings
+from django.test.client import RequestFactory
 
 from changes.execution import ChangeExecutionError, execute_pending_change
+from changes.admin import VlanChangeLogAdmin
 from changes.models import VlanChangeLog
 from inventory.models import Facility, Switch, VlanProfile
 from django.contrib.auth import get_user_model
@@ -88,3 +93,30 @@ class ChangeExecutionTests(TestCase):
 
         self.change.refresh_from_db()
         self.assertEqual(self.change.status, VlanChangeLog.Status.APPROVED)
+
+    @override_settings(
+        CHANGE_EXECUTION_ENABLED=True,
+        CHANGE_SSH_USERNAME="writer",
+        CHANGE_SSH_PASSWORD="secret",
+    )
+    @patch("changes.admin.execute_vlan_change.delay")
+    def test_approval_queues_worker_after_commit(self, delay):
+        pending = VlanChangeLog.objects.create(
+            requested_by=self.user,
+            switch=self.switch,
+            interface_name="1/1/16",
+            mac_address="02:00:00:00:00:02",
+            previous_vlan=self.previous_vlan,
+            requested_vlan=self.requested_vlan,
+        )
+        request = RequestFactory().post("/admin/changes/vlanchangelog/")
+        request.user = self.user
+        model_admin = VlanChangeLogAdmin(VlanChangeLog, admin.site)
+
+        with self.captureOnCommitCallbacks(execute=True):
+            with patch.object(model_admin, "message_user"):
+                model_admin.approve_requests(request, VlanChangeLog.objects.filter(pk=pending.pk))
+
+        pending.refresh_from_db()
+        self.assertEqual(pending.status, VlanChangeLog.Status.APPROVED)
+        delay.assert_called_once_with(pending.pk)

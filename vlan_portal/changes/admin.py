@@ -1,11 +1,13 @@
 from django.contrib import admin
 from django.contrib import messages
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
 from audit.models import AuditLog
 
 from .models import VlanChangeLog
+from .tasks import execute_vlan_change
 
 
 @admin.register(VlanChangeLog)
@@ -40,6 +42,21 @@ class VlanChangeLogAdmin(admin.ModelAdmin):
 							"approved_by": request.user.username,
 						},
 					)
+					should_queue = bool(
+						settings.CHANGE_EXECUTION_ENABLED
+						and settings.CHANGE_SSH_USERNAME
+						and settings.CHANGE_SSH_PASSWORD
+					)
+					if should_queue:
+						transaction.on_commit(lambda change_id=change.pk: execute_vlan_change.delay(change_id))
+						AuditLog.objects.create(
+							user=request.user,
+							event_type=AuditLog.EventType.VLAN_CHANGE,
+							facility_code=change.switch.facility.code,
+							switch=change.switch,
+							mac_address=change.mac_address,
+							detail={"action": "execution_queued", "change_id": change.pk},
+						)
 			except ValidationError as exc:
 				self.message_user(request, str(exc), messages.ERROR)
 				continue
