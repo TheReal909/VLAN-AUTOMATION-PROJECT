@@ -7,6 +7,7 @@ from django.test.client import RequestFactory
 from changes.execution import ChangeExecutionError, execute_pending_change
 from changes.admin import VlanChangeLogAdmin
 from changes.models import VlanChangeLog
+from audit.models import AuditLog
 from inventory.models import Facility, Switch, VlanProfile
 from django.contrib.auth import get_user_model
 
@@ -75,6 +76,7 @@ class ChangeExecutionTests(TestCase):
         self.assertEqual(self.change.status, VlanChangeLog.Status.APPLIED)
         self.assertEqual(connector.applied, [self.change.pk])
         self.assertIsNotNone(self.change.applied_at)
+        self.assertEqual(AuditLog.objects.filter(detail__action="execution_applied").count(), 1)
 
     @override_settings(CHANGE_EXECUTION_ENABLED=True)
     def test_failed_verification_marks_change_failed(self):
@@ -86,6 +88,7 @@ class ChangeExecutionTests(TestCase):
         self.change.refresh_from_db()
         self.assertEqual(self.change.status, VlanChangeLog.Status.FAILED)
         self.assertIn("did not verify", self.change.error_message)
+        self.assertEqual(AuditLog.objects.filter(detail__action="execution_failed").count(), 1)
 
     def test_execution_is_disabled_by_default(self):
         with self.assertRaisesMessage(ChangeExecutionError, "disabled by configuration"):

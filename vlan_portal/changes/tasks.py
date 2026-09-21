@@ -2,7 +2,7 @@ from celery import shared_task
 from django.conf import settings
 
 from .connectors import FastIronVlanChangeConnector
-from .execution import execute_pending_change
+from .execution import ChangeExecutionError, execute_pending_change
 
 
 @shared_task(bind=True, max_retries=2)
@@ -18,6 +18,8 @@ def execute_vlan_change(self, change_id: int):
     )
     try:
         result = execute_pending_change(change_id, connector)
+    except ChangeExecutionError:
+        raise
     except Exception as exc:
         raise self.retry(exc=exc, countdown=30)
     return {
