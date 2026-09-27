@@ -84,6 +84,17 @@ class SwitchCleanTests(SimpleTestCase):
 
 
 class SeedDemoCommandTests(TestCase):
+    def test_vlan_profile_can_be_created_without_requester_ad_group(self):
+        facility = Facility.objects.create(code="F19116", name="No AD Group Facility")
+
+        profile = VlanProfile.objects.create(
+            facility=facility,
+            label="Vendor",
+            vlan_id=201,
+        )
+
+        self.assertEqual(profile.requester_ad_group, "")
+
     def test_seed_demo_is_repeatable_and_creates_expected_topology(self):
         call_command("seed_demo")
         call_command("seed_demo")

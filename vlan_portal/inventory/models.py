@@ -105,7 +105,11 @@ class VlanProfile(ValidatedModel):
     label = models.CharField(max_length=80, help_text="Helpdesk-facing name, e.g. Guest or Vendor.")
     vlan_id = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(4094)])
     assignment_mode = models.CharField(max_length=25, choices=AssignmentMode.choices, default=AssignmentMode.STATIC)
-    requester_ad_group = models.CharField(max_length=255, help_text="Exact AD security-group name.")
+    requester_ad_group = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Optional AD security-group name; not used for current authorization.",
+    )
     allow_helpdesk_port_change = models.BooleanField(default=False)
     description = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
