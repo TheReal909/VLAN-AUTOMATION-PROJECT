@@ -83,7 +83,9 @@ class MacDiscoveryServiceTests(TestCase):
         connector = FakeConnector(
             mac_results={"MDF-01": [MacTableEntry(mac, 1, "1/1/5", False)]},
             neighbors={
-                "MDF-01": [LldpNeighbor("1/1/5", "a83c.a534.a128", None)],
+                "MDF-01": [
+                    LldpNeighbor("1/1/5", "a83c.a534.a128", None, "Endpoint Class I")
+                ],
             },
         )
 
@@ -92,6 +94,21 @@ class MacDiscoveryServiceTests(TestCase):
         self.assertEqual(result.switch, self.mdf)
         self.assertEqual(result.entry.interface_name, "1/1/5")
         self.assertEqual(connector.queried_switches, ["MDF-01"])
+
+    def test_endpoint_class_conflicting_with_uplink_name_stops_safely(self):
+        mac = "a83c.a534.a128"
+        connector = FakeConnector(
+            mac_results={"MDF-01": [MacTableEntry(mac, 1, "1/1/5", False)]},
+            neighbors={
+                "MDF-01": [
+                    LldpNeighbor("1/1/5", "a83c.a534.a128", None, "Endpoint Class I")
+                ],
+            },
+        )
+        connector.find_port_name = lambda switch, interface: "C2-CP_UPLNK_PT_IDF"
+
+        with self.assertRaisesMessage(DiscoveryError, "conflicting uplink and endpoint evidence"):
+            MacDiscoveryService(connector).locate(self.facility, mac)
 
     def test_service_rejects_unresolved_uplink(self):
         mac = "aa:bb:cc:dd:ee:ff"

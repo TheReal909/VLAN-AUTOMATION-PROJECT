@@ -15,6 +15,11 @@ class LldpNeighbor:
     interface_name: str
     neighbor_name: str
     management_ip: str | None
+    device_type: str | None = None
+
+    @property
+    def is_endpoint(self) -> bool:
+        return bool(self.device_type and "endpoint class" in self.device_type.lower())
 
 
 _MAC_PATTERN = r"(?P<mac>[0-9a-fA-F]{2}(?:[:-]?[0-9a-fA-F]{2}){5}|[0-9a-fA-F]{4}(?:[.-][0-9a-fA-F]{4}){2})"
@@ -78,22 +83,29 @@ def parse_lldp_neighbors(output: str) -> list[LldpNeighbor]:
     current_interface = None
     current_name = None
     current_ip = None
+    current_device_type = None
     for line in output.splitlines():
         interface_match = re.search(r"(?:Local Port|Local Intf|Interface)\s*[:：]\s*(\S+)", line, re.IGNORECASE)
         name_match = re.search(r"(?:System Name|Neighbor|Chassis Name)\s*[:：]\s*(\S+)", line, re.IGNORECASE)
         ip_match = re.search(r"(?:Management Address|Management IP|IP address)\s*[:：]\s*(\d{1,3}(?:\.\d{1,3}){3})", line, re.IGNORECASE)
+        device_type_match = re.search(r"MED device type\s*[:：]\s*(.+?)\s*$", line, re.IGNORECASE)
         if interface_match:
             if current_interface and current_name:
-                neighbors.append(LldpNeighbor(current_interface, current_name, current_ip))
+                neighbors.append(
+                    LldpNeighbor(current_interface, current_name, current_ip, current_device_type)
+                )
             current_interface = interface_match.group(1)
             current_name = None
             current_ip = None
+            current_device_type = None
         if name_match:
             current_name = name_match.group(1)
         if ip_match:
             current_ip = ip_match.group(1)
+        if device_type_match:
+            current_device_type = device_type_match.group(1).strip()
     if current_interface and current_name:
-        neighbors.append(LldpNeighbor(current_interface, current_name, current_ip))
+        neighbors.append(LldpNeighbor(current_interface, current_name, current_ip, current_device_type))
     return neighbors
 
 

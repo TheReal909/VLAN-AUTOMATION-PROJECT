@@ -37,6 +37,7 @@ class DiscoveryParserTests(SimpleTestCase):
         Local Port: 1/1/48
         System Name: IDF-01
         Management Address: 10.10.1.11
+        + MED device type : Bridge, switch
         """
 
         neighbors = parse_lldp_neighbors(output)
@@ -44,6 +45,20 @@ class DiscoveryParserTests(SimpleTestCase):
         self.assertEqual(neighbors[0].interface_name, "1/1/48")
         self.assertEqual(neighbors[0].neighbor_name, "IDF-01")
         self.assertEqual(neighbors[0].management_ip, "10.10.1.11")
+        self.assertEqual(neighbors[0].device_type, "Bridge, switch")
+        self.assertFalse(neighbors[0].is_endpoint)
+
+    def test_parse_lldp_endpoint_class(self):
+        output = """
+        Local port: 1/1/5
+          Neighbor: a83c.a534.a128, TTL 2706 seconds
+          + MED device type : Endpoint Class I
+        """
+
+        neighbor = parse_lldp_neighbors(output)[0]
+
+        self.assertTrue(neighbor.is_endpoint)
+        self.assertEqual(neighbor.device_type, "Endpoint Class I")
 
     def test_parse_interface_trunk_status_requires_explicit_switchport_output(self):
         self.assertTrue(parse_interface_is_trunk("Switchport mode: trunk"))
