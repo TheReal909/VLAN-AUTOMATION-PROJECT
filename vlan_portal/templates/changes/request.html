@@ -4,6 +4,10 @@
 
 {% block content %}
   <h2>Request VLAN change</h2>
+  {% if stale_observation %}
+    <p role="alert">This saved location has not been confirmed by a recent live switch lookup. Run live discovery again before requesting a change.</p>
+    <p><a href="{% url 'discovery' %}">Return to MAC lookup</a></p>
+  {% else %}
   <dl>
     <dt>MAC address</dt>
     <dd>{{ observation.mac_address }}</dd>
@@ -19,4 +23,5 @@
     {{ form.as_p }}
     <button type="submit">Create pending request</button>
   </form>
+  {% endif %}
 {% endblock %}

@@ -13,28 +13,54 @@
   <button type="submit">Run live discovery</button>
 </form>
 
-{% if searched and form.is_valid %} {% if observation %}
-<section aria-label="Lookup result">
-  <h2>Device found</h2>
-  <dl>
-    <dt>MAC address</dt>
-    <dd>{{ observation.mac_address }}</dd>
-    <dt>Switch</dt>
-    <dd>{{ observation.switch.name }}</dd>
-    <dt>Interface</dt>
-    <dd>{{ observation.interface_name }}</dd>
-    <dt>Current VLAN</dt>
-    <dd>{{ observation.vlan_id }}</dd>
-    <dt>Observed</dt>
-    <dd>{{ observation.observed_at }}</dd>
-  </dl>
-  {% if user.is_authenticated %}
-    <p><a href="{% url 'changes-request' observation.id %}">Request a VLAN change</a></p>
+{% if searched and form.is_valid %}
+  {% if live_result %}
+    <section aria-label="Live discovery result">
+      <h2>Live discovery result</h2>
+      <dl>
+        <dt>MAC address</dt>
+        <dd>{{ live_result.mac_address }}</dd>
+        <dt>Switch</dt>
+        <dd>{{ live_result.switch.name }}</dd>
+        <dt>Interface</dt>
+        <dd>{{ live_result.entry.interface_name }}</dd>
+        <dt>Current VLAN</dt>
+        <dd>{{ live_result.entry.vlan_id }}</dd>
+        <dt>Confirmed live at</dt>
+        <dd>{{ observation.last_live_discovery_at }}</dd>
+        <dt>Path</dt>
+        <dd>
+          {% for switch in live_result.path %}
+            {{ switch.name }}{% if not forloop.last %} &rarr; {% endif %}
+          {% endfor %}
+        </dd>
+      </dl>
+      {% if user.is_authenticated and observation_is_fresh %}
+        <p><a href="{% url 'changes-request' observation.id %}">Request a VLAN change</a></p>
+      {% endif %}
+    </section>
+  {% elif observation %}
+    <section aria-label="Last known observation">
+      <h2>Last known observation, not confirmed by this search</h2>
+      <dl>
+        <dt>MAC address</dt>
+        <dd>{{ observation.mac_address }}</dd>
+        <dt>Switch</dt>
+        <dd>{{ observation.switch.name }}</dd>
+        <dt>Interface</dt>
+        <dd>{{ observation.interface_name }}</dd>
+        <dt>Last known VLAN</dt>
+        <dd>{{ observation.vlan_id }}</dd>
+        <dt>Record last updated</dt>
+        <dd>{{ observation.observed_at }}</dd>
+        <dt>Last live confirmation</dt>
+        <dd>{{ observation.last_live_discovery_at|default:"Never" }}</dd>
+      </dl>
+      <p>This cached location may be stale. Run live discovery before requesting a VLAN change.</p>
+    </section>
+  {% elif not live_error %}
+    <p>No stored observation was found for that MAC in the selected facility.</p>
   {% endif %}
-</section>
-{% else %}
-<p>No observation was found for that MAC in the selected facility.</p>
-{% endif %}
 {% endif %}
 
 {% if live_error %}
@@ -54,23 +80,4 @@
   </details>
 {% endif %}
 
-{% if live_result %}
-  <section aria-label="Live discovery result">
-    <h2>Live discovery result</h2>
-    <dl>
-      <dt>Switch</dt>
-      <dd>{{ live_result.switch.name }}</dd>
-      <dt>Interface</dt>
-      <dd>{{ live_result.entry.interface_name }}</dd>
-      <dt>Current VLAN</dt>
-      <dd>{{ live_result.entry.vlan_id }}</dd>
-      <dt>Path</dt>
-      <dd>
-        {% for switch in live_result.path %}
-          {{ switch.name }}{% if not forloop.last %} &rarr; {% endif %}
-        {% endfor %}
-      </dd>
-    </dl>
-  </section>
-{% endif %}
 {% endblock %}

@@ -7,6 +7,7 @@ class PortObservation(models.Model):
     interface_name = models.CharField(max_length=20)
     vlan_id = models.PositiveSmallIntegerField(help_text="Raw VLAN ID as reported by the switch.")
     observed_at = models.DateTimeField(auto_now=True)
+    last_live_discovery_at = models.DateTimeField(null=True, blank=True, editable=False)
 
     class Meta:
         ordering = ["-observed_at"]

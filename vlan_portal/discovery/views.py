@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.shortcuts import render
+from django.utils import timezone
 
 from .connectors import DiscoveryError, MacDiscoveryService, NetmikoReadOnlyConnector
 from .forms import MacLookupForm
@@ -43,6 +44,7 @@ def index(request):
                             "switch": live_result.switch,
                             "interface_name": live_result.entry.interface_name,
                             "vlan_id": live_result.entry.vlan_id,
+                            "last_live_discovery_at": timezone.now(),
                         },
                     )
                 except DiscoveryError as exc:
@@ -55,6 +57,12 @@ def index(request):
         {
             "form": form,
             "observation": observation,
+            "observation_is_fresh": bool(
+                observation
+                and observation.last_live_discovery_at
+                and (timezone.now() - observation.last_live_discovery_at).total_seconds()
+                <= settings.DISCOVERY_OBSERVATION_MAX_AGE_SECONDS
+            ),
             "live_result": live_result,
             "live_error": live_error,
             "live_trace": live_trace,

@@ -5,6 +5,7 @@ from django.test import override_settings
 from django.test import TestCase
 from django.urls import reverse
 
+from discovery.connectors import DiscoveryError
 from discovery.models import PortObservation
 from inventory.models import Facility, Switch
 
@@ -53,7 +54,7 @@ class MacLookupTests(TestCase):
             {"facility": other_facility.pk, "mac_address": "02:00:00:00:00:01"},
         )
 
-        self.assertContains(response, "No observation was found")
+        self.assertContains(response, "No stored observation was found")
         self.assertNotContains(response, "IDF-02")
 
     @override_settings(DISCOVERY_SSH_USERNAME="reader", DISCOVERY_SSH_PASSWORD="secret")
@@ -84,6 +85,28 @@ class MacLookupTests(TestCase):
         self.assertEqual(observation.switch, self.switch)
         self.assertEqual(observation.interface_name, "2/1/15")
         self.assertEqual(observation.vlan_id, 201)
+        self.assertIsNotNone(observation.last_live_discovery_at)
+
+    @override_settings(DISCOVERY_SSH_USERNAME="reader", DISCOVERY_SSH_PASSWORD="secret")
+    @patch(
+        "discovery.views.MacDiscoveryService.locate",
+        side_effect=DiscoveryError("SSH command failed"),
+    )
+    def test_live_failure_labels_existing_observation_as_last_known(self, locate):
+        response = self.client.post(
+            reverse("discovery"),
+            {
+                "facility": self.facility.pk,
+                "mac_address": "02:00:00:00:00:01",
+                "action": "live-discovery",
+            },
+        )
+
+        self.assertContains(response, "Last known observation, not confirmed by this search")
+        self.assertNotContains(response, "Device found")
+        self.assertNotContains(response, "Request a VLAN change")
+        self.assertContains(response, "SSH command failed")
+        locate.assert_called_once()
 
     @override_settings(DISCOVERY_SSH_USERNAME="", DISCOVERY_SSH_PASSWORD="")
     def test_live_discovery_requires_credentials(self):

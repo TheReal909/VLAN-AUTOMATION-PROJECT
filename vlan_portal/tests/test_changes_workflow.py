@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from audit.models import AuditLog
 from changes.models import VlanChangeLog
@@ -47,6 +48,7 @@ class VlanChangeWorkflowTests(TestCase):
             switch=self.switch,
             interface_name="1/1/15",
             vlan_id=201,
+            last_live_discovery_at=timezone.now(),
         )
 
     def test_request_requires_login(self):
@@ -84,3 +86,32 @@ class VlanChangeWorkflowTests(TestCase):
         response = self.client.get(reverse("changes-request", args=[self.observation.pk]))
 
         self.assertNotContains(response, "Voice")
+
+    def test_stale_or_never_live_confirmed_observation_cannot_request_change(self):
+        self.client.login(username="agent", password="test-password")
+        PortObservation.objects.filter(pk=self.observation.pk).update(last_live_discovery_at=None)
+
+        response = self.client.get(reverse("changes-request", args=[self.observation.pk]))
+
+        self.assertEqual(response.status_code, 409)
+        self.assertContains(
+            response,
+            "not been confirmed by a recent live switch lookup",
+            status_code=409,
+        )
+        self.assertNotContains(response, "Create pending request", status_code=409)
+        self.assertEqual(VlanChangeLog.objects.count(), 0)
+
+    def test_expired_live_observation_is_rejected(self):
+        self.client.login(username="agent", password="test-password")
+        PortObservation.objects.filter(pk=self.observation.pk).update(
+            last_live_discovery_at=timezone.now() - timezone.timedelta(minutes=10)
+        )
+
+        response = self.client.post(
+            reverse("changes-request", args=[self.observation.pk]),
+            {"requested_vlan": self.target_vlan.pk},
+        )
+
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(VlanChangeLog.objects.count(), 0)

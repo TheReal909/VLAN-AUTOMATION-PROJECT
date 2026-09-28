@@ -3,6 +3,7 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 
 from audit.models import AuditLog
+from discovery.freshness import is_live_observation_fresh
 from discovery.models import PortObservation
 
 from .forms import VlanChangeRequestForm
@@ -16,6 +17,13 @@ def request_change(request, observation_id):
         pk=observation_id,
     )
     facility = observation.switch.facility
+    if not is_live_observation_fresh(observation):
+        return render(
+            request,
+            "changes/request.html",
+            {"observation": observation, "stale_observation": True},
+            status=409,
+        )
     form = VlanChangeRequestForm(
         request.POST or None,
         facility=facility,
