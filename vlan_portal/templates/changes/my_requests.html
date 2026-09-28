@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}My VLAN requests{% endblock %}
+{% block breadcrumb %}My VLAN requests{% endblock %}
+
+{% block content %}
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Change control</p>
+      <h1>My VLAN requests</h1>
+      <p class="lede">Track review and execution status for requests you submitted.</p>
+    </div>
+    <a class="button-link" href="{% url 'discovery' %}">Find a device</a>
+  </div>
+
+  {% if changes %}
+    <div class="request-list">
+      {% for change in changes %}
+        <article class="panel request-card">
+          <div class="request-card-heading">
+            <div>
+              <p class="eyebrow">{{ change.switch.facility.code }} · {{ change.switch.name }}</p>
+              <h2>{{ change.mac_address }}</h2>
+              <p class="request-meta">Port {{ change.interface_name }} · VLAN {{ change.previous_vlan }} → VLAN {{ change.requested_vlan.vlan_id }}</p>
+            </div>
+            <span class="status-pill status-{{ change.status|lower }}">{{ change.get_status_display }}</span>
+          </div>
+          <div class="result-banner {{ change.status_info.tone }}">
+            <span class="status-dot"></span>
+            <div>
+              <div class="result-title">{{ change.status_info.title }}</div>
+              <p class="result-copy">{{ change.status_info.detail }}</p>
+            </div>
+          </div>
+          <div class="request-card-footer">
+            <span>Submitted {{ change.created_at }}</span>
+            {% if change.approved_at %}<span>Approved {{ change.approved_at }}</span>{% endif %}
+            {% if change.applied_at %}<span>Completed {{ change.applied_at }}</span>{% endif %}
+            <a href="{% url 'changes-requested' change.id %}">View request</a>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">You have not submitted any VLAN change requests yet.</div>
+  {% endif %}
+{% endblock %}

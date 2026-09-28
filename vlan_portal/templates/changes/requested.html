@@ -5,9 +5,9 @@
 
 {% block content %}
   {% if change %}
-    <div class="page-heading"><div><p class="eyebrow">Change control</p><h1>Request submitted</h1><p class="lede">The request is pending engineering approval. The switch has not been changed.</p></div></div>
+    <div class="page-heading"><div><p class="eyebrow">Change control</p><h1>VLAN request status</h1><p class="lede">Follow the request through review and switch execution.</p></div><a href="{% url 'changes-mine' %}">All my requests</a></div>
     <section class="panel">
-      <div class="result-banner warning"><span class="status-dot"></span><div><div class="result-title">Pending approval</div><p class="result-copy">No configuration has been sent to the switch.</p></div></div>
+      <div class="result-banner {{ status_info.tone }}"><span class="status-dot"></span><div><div class="result-title">{{ status_info.title }}</div><p class="result-copy">{{ status_info.detail }}</p></div></div>
       <dl class="result-grid">
         <div class="result-item"><dt>MAC address</dt><dd>{{ change.mac_address }}</dd></div>
         <div class="result-item"><dt>Switch</dt><dd>{{ change.switch.name }}</dd></div>
@@ -15,6 +15,9 @@
         <div class="result-item"><dt>Status</dt><dd>{{ change.get_status_display }}</dd></div>
         <div class="result-item"><dt>Current VLAN</dt><dd>{{ change.previous_vlan }}</dd></div>
         <div class="result-item"><dt>Requested VLAN</dt><dd>{{ change.requested_vlan.vlan_id }}</dd></div>
+        <div class="result-item"><dt>Submitted</dt><dd>{{ change.created_at }}</dd></div>
+        {% if change.approved_at %}<div class="result-item"><dt>Approved</dt><dd>{{ change.approved_at }} · {{ change.approved_by.get_username }}</dd></div>{% endif %}
+        {% if change.applied_at %}<div class="result-item"><dt>Completed</dt><dd>{{ change.applied_at }}</dd></div>{% endif %}
       </dl>
     </section>
   {% else %}

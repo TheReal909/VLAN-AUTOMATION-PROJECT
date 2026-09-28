@@ -29,6 +29,7 @@
       <div class="site-nav-inner">
         <a class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}">Overview</a>
         <a class="{% if request.resolver_match.url_name == 'discovery' %}active{% endif %}" href="{% url 'discovery' %}">MAC lookup</a>
+        {% if user.is_authenticated %}<a class="{% if request.resolver_match.url_name == 'changes-mine' or request.resolver_match.url_name == 'changes-requested' %}active{% endif %}" href="{% url 'changes-mine' %}">My VLAN requests</a>{% endif %}
         {% if user.is_staff %}
           <a href="{% url 'admin:changes_vlanchangelog_changelist' %}">Change review</a>
           <a href="{% url 'admin:inventory_switch_changelist' %}">Inventory</a>

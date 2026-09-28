@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -72,8 +72,8 @@ class VlanChangeWorkflowTests(TestCase):
             {"requested_vlan": self.target_vlan.pk},
         )
 
-        self.assertRedirects(response, reverse("changes-requested", args=[self.observation.pk]))
         change = VlanChangeLog.objects.get()
+        self.assertRedirects(response, reverse("changes-requested", args=[change.pk]))
         self.assertEqual(change.status, VlanChangeLog.Status.PENDING)
         self.assertEqual(change.requested_vlan, self.target_vlan)
         self.assertEqual(change.previous_vlan, 201)
@@ -92,10 +92,59 @@ class VlanChangeWorkflowTests(TestCase):
             {"requested_vlan": self.current_vlan.pk},
         )
 
-        self.assertRedirects(response, reverse("changes-requested", args=[self.observation.pk]))
         change = VlanChangeLog.objects.get()
+        self.assertRedirects(response, reverse("changes-requested", args=[change.pk]))
         self.assertEqual(change.previous_vlan, 1)
         self.assertEqual(change.requested_vlan, self.current_vlan)
+
+    def test_agent_can_view_their_pending_request_status(self):
+        self.client.login(username="agent", password="test-password")
+        self.client.post(
+            reverse("changes-request", args=[self.observation.pk]),
+            {"requested_vlan": self.target_vlan.pk},
+        )
+
+        response = self.client.get(reverse("changes-mine"))
+
+        self.assertContains(response, "My VLAN requests")
+        self.assertContains(response, "Awaiting engineer approval")
+        self.assertContains(response, "The switch has not been changed.")
+
+    @override_settings(CHANGE_EXECUTION_ENABLED=False)
+    def test_approved_request_explains_execution_is_disabled(self):
+        change = VlanChangeLog.objects.create(
+            requested_by=self.user,
+            switch=self.switch,
+            interface_name=self.observation.interface_name,
+            mac_address=self.observation.mac_address,
+            previous_vlan=self.observation.vlan_id,
+            requested_vlan=self.target_vlan,
+            status=VlanChangeLog.Status.APPROVED,
+            approved_by=self.user,
+            approved_at=timezone.now(),
+        )
+        self.client.login(username="agent", password="test-password")
+
+        response = self.client.get(reverse("changes-requested", args=[change.pk]))
+
+        self.assertContains(response, "Approved, execution disabled")
+        self.assertContains(response, "The switch has not been changed")
+
+    def test_agent_cannot_view_another_users_change_request(self):
+        other_user = get_user_model().objects.create_user(username="other-agent", password="test-password")
+        change = VlanChangeLog.objects.create(
+            requested_by=other_user,
+            switch=self.switch,
+            interface_name=self.observation.interface_name,
+            mac_address=self.observation.mac_address,
+            previous_vlan=self.observation.vlan_id,
+            requested_vlan=self.target_vlan,
+        )
+        self.client.login(username="agent", password="test-password")
+
+        response = self.client.get(reverse("changes-requested", args=[change.pk]))
+
+        self.assertEqual(response.status_code, 404)
 
     def test_policy_controlled_non_vlan_one_is_not_offered(self):
         self.client.login(username="agent", password="test-password")

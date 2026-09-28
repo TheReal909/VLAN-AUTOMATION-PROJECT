@@ -16,7 +16,7 @@ class VlanChangeLogAdmin(admin.ModelAdmin):
 	list_filter = ("status", "switch__facility", "created_at")
 	search_fields = ("mac_address", "interface_name", "switch__name", "requested_by__username")
 	autocomplete_fields = ("requested_by", "switch", "requested_vlan")
-	readonly_fields = ("created_at", "approved_at", "applied_at")
+	readonly_fields = ("status", "approved_by", "approved_at", "created_at", "applied_at", "error_message")
 	actions = ("approve_requests",)
 
 	@admin.action(description="Approve selected pending VLAN changes")
