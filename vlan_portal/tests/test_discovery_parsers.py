@@ -93,3 +93,23 @@ class DiscoveryParserTests(SimpleTestCase):
 
         send.assert_called_once_with(switch, "show mac-address a83c.a534.a128")
         self.assertEqual(entries[0].mac_address, "a83c.a534.a128")
+
+    @patch("netmiko.ConnectHandler")
+    def test_read_commands_reuse_one_ssh_session_per_switch(self, connect):
+        connection = connect.return_value
+        connection.send_command.side_effect = [
+            "1 a83c.a534.a128 2/1/5",
+            "Local port: 1/1/48\nNeighbor: IDF-01, TTL 30 seconds",
+            "Port name: C2-CP_UPLNK_PT_IDF",
+        ]
+        switch = type("Switch", (), {"pk": 42, "name": "MDF-01", "management_ip": "192.0.2.10"})()
+        connector = NetmikoReadOnlyConnector("reader", "secret")
+
+        connector.find_mac(switch, "a83c.a534.a128")
+        connector.find_neighbors(switch)
+        connector.find_port_name(switch, "1/1/48")
+        connector.close()
+
+        connect.assert_called_once()
+        self.assertEqual(connection.send_command.call_count, 3)
+        connection.disconnect.assert_called_once()

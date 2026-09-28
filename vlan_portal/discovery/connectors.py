@@ -24,6 +24,8 @@ class ReadOnlySwitchConnector(Protocol):
 
     def find_port_name(self, switch: Switch, interface_name: str) -> str: ...
 
+    def close(self) -> None: ...
+
 
 class NetmikoReadOnlyConnector:
     def __init__(self, username: str, password: str, *, port: int = 22, timeout: int = 10):
@@ -32,8 +34,13 @@ class NetmikoReadOnlyConnector:
         self.port = port
         self.timeout = timeout
         self.command_trace: list[dict[str, str]] = []
+        self._connections = {}
 
-    def _send(self, switch: Switch, command: str) -> str:
+    def _get_connection(self, switch: Switch):
+        switch_id = self._switch_key(switch)
+        connection = self._connections.get(switch_id)
+        if connection is not None:
+            return connection
         from netmiko import ConnectHandler
 
         try:
@@ -49,6 +56,15 @@ class NetmikoReadOnlyConnector:
             )
         except Exception as exc:
             raise DiscoveryError(f"Could not connect to {switch.name} for read-only discovery.") from exc
+        self._connections[switch_id] = connection
+        return connection
+
+    @staticmethod
+    def _switch_key(switch: Switch):
+        return getattr(switch, "pk", None) or switch.management_ip
+
+    def _send(self, switch: Switch, command: str) -> str:
+        connection = self._get_connection(switch)
         try:
             output = connection.send_command(command, read_timeout=self.timeout)
             self.command_trace.append(
@@ -59,11 +75,22 @@ class NetmikoReadOnlyConnector:
             self.command_trace.append(
                 {"switch": switch.name, "command": command, "output": "Command failed."}
             )
+            self._disconnect(self._switch_key(switch))
             raise DiscoveryError(
                 f"Read-only command '{command}' failed on {switch.name}; check command support, privilege, and timeout."
             ) from exc
-        finally:
-            connection.disconnect()
+
+    def _disconnect(self, switch_id):
+        connection = self._connections.pop(switch_id, None)
+        if connection is not None:
+            try:
+                connection.disconnect()
+            except Exception:
+                pass
+
+    def close(self) -> None:
+        for switch_id in tuple(self._connections):
+            self._disconnect(switch_id)
 
     def find_mac(self, switch: Switch, mac_address: str) -> list[MacTableEntry]:
         ruckus_mac = normalize_mac(mac_address)
@@ -93,6 +120,14 @@ class MacDiscoveryService:
         self.max_hops = max_hops
 
     def locate(self, facility: Facility, mac_address: str) -> DiscoveryResult:
+        try:
+            return self._locate(facility, mac_address)
+        finally:
+            close = getattr(self.connector, "close", None)
+            if close is not None:
+                close()
+
+    def _locate(self, facility: Facility, mac_address: str) -> DiscoveryResult:
         switches = list(facility.switches.filter(is_active=True))
         current_switches = [switch for switch in switches if switch.closet_role == Switch.ClosetRole.MDF]
         if not current_switches:
