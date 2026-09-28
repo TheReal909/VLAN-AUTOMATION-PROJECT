@@ -27,6 +27,7 @@ class VlanChangeWorkflowTests(TestCase):
             vlan_id=201,
             assignment_mode=VlanProfile.AssignmentMode.STATIC,
             requester_ad_group="GG-Network-Vendor",
+            allow_helpdesk_port_change=True,
         )
         self.target_vlan = VlanProfile.objects.create(
             facility=self.facility,
@@ -75,10 +76,26 @@ class VlanChangeWorkflowTests(TestCase):
         change = VlanChangeLog.objects.get()
         self.assertEqual(change.status, VlanChangeLog.Status.PENDING)
         self.assertEqual(change.requested_vlan, self.target_vlan)
+        self.assertEqual(change.previous_vlan, 201)
         audit = AuditLog.objects.get()
         self.assertEqual(audit.event_type, AuditLog.EventType.VLAN_CHANGE)
         self.assertEqual(audit.detail["action"], "request_created")
         self.assertEqual(audit.detail["requested_vlan"], 1)
+
+    def test_request_can_start_from_vlan_without_a_profile(self):
+        self.client.login(username="agent", password="test-password")
+        self.observation.vlan_id = 1
+        self.observation.save(update_fields=["vlan_id"])
+
+        response = self.client.post(
+            reverse("changes-request", args=[self.observation.pk]),
+            {"requested_vlan": self.current_vlan.pk},
+        )
+
+        self.assertRedirects(response, reverse("changes-requested", args=[self.observation.pk]))
+        change = VlanChangeLog.objects.get()
+        self.assertEqual(change.previous_vlan, 1)
+        self.assertEqual(change.requested_vlan, self.current_vlan)
 
     def test_policy_controlled_non_vlan_one_is_not_offered(self):
         self.client.login(username="agent", password="test-password")

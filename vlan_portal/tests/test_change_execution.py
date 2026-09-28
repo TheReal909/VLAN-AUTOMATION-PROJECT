@@ -59,7 +59,7 @@ class ChangeExecutionTests(TestCase):
             switch=self.switch,
             interface_name="1/1/15",
             mac_address="02:00:00:00:00:01",
-            previous_vlan=self.previous_vlan,
+            previous_vlan=self.previous_vlan.vlan_id,
             requested_vlan=self.requested_vlan,
         )
         self.change.approve(self.user)
@@ -109,7 +109,7 @@ class ChangeExecutionTests(TestCase):
             switch=self.switch,
             interface_name="1/1/16",
             mac_address="02:00:00:00:00:02",
-            previous_vlan=self.previous_vlan,
+            previous_vlan=self.previous_vlan.vlan_id,
             requested_vlan=self.requested_vlan,
         )
         request = RequestFactory().post("/admin/changes/vlanchangelog/")

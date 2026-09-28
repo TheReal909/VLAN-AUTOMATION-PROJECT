@@ -15,14 +15,14 @@ class VlanChangeLogAdmin(admin.ModelAdmin):
 	list_display = ("mac_address", "switch", "interface_name", "previous_vlan", "requested_vlan", "status", "created_at")
 	list_filter = ("status", "switch__facility", "created_at")
 	search_fields = ("mac_address", "interface_name", "switch__name", "requested_by__username")
-	autocomplete_fields = ("requested_by", "switch", "previous_vlan", "requested_vlan")
+	autocomplete_fields = ("requested_by", "switch", "requested_vlan")
 	readonly_fields = ("created_at", "approved_at", "applied_at")
 	actions = ("approve_requests",)
 
 	@admin.action(description="Approve selected pending VLAN changes")
 	def approve_requests(self, request, queryset):
 		approved = 0
-		for change in queryset.select_related("switch", "requested_vlan", "previous_vlan"):
+		for change in queryset.select_related("switch", "requested_vlan"):
 			if change.status != VlanChangeLog.Status.PENDING:
 				continue
 			try:

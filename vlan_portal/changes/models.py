@@ -16,7 +16,7 @@ class VlanChangeLog(ValidatedModel):
     switch = models.ForeignKey("inventory.Switch", on_delete=models.PROTECT)
     interface_name = models.CharField(max_length=20)
     mac_address = models.CharField(max_length=17)
-    previous_vlan = models.ForeignKey("inventory.VlanProfile", related_name="+", on_delete=models.PROTECT)
+    previous_vlan = models.PositiveSmallIntegerField()
     requested_vlan = models.ForeignKey("inventory.VlanProfile", related_name="+", on_delete=models.PROTECT)
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
     approved_by = models.ForeignKey(
@@ -43,4 +43,4 @@ class VlanChangeLog(ValidatedModel):
         self.approved_at = timezone.now()
 
     def __str__(self):
-        return f"{self.mac_address}: {self.previous_vlan} -> {self.requested_vlan} ({self.status})"
+        return f"{self.mac_address}: VLAN {self.previous_vlan} -> {self.requested_vlan} ({self.status})"

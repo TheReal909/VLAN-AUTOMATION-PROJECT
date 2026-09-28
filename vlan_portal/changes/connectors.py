@@ -44,7 +44,7 @@ class FastIronVlanChangeConnector:
                 commands = [
                     f"interface ethernet {change.interface_name}",
                     "exit",
-                    f"vlan {change.previous_vlan.vlan_id}",
+                    f"vlan {change.previous_vlan}",
                     f"no untagged ethernet {change.interface_name}",
                     f"vlan {change.requested_vlan.vlan_id}",
                     f"untagged ethernet {change.interface_name}",

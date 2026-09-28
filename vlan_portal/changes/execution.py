@@ -32,7 +32,7 @@ def execute_pending_change(change_id: int, connector: VlanChangeConnector) -> Ex
     with transaction.atomic():
         change = (
             VlanChangeLog.objects.select_for_update()
-            .select_related("switch", "previous_vlan", "requested_vlan")
+            .select_related("switch", "requested_vlan")
             .get(pk=change_id)
         )
         if change.status != VlanChangeLog.Status.APPROVED:

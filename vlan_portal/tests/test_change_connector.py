@@ -73,7 +73,7 @@ class FastIronVlanChangeConnectorTests(SimpleTestCase):
 
         class Change:
             interface_name = "1/1/6"
-            previous_vlan = type("PreviousVlan", (), {"vlan_id": 201})()
+            previous_vlan = 201
             requested_vlan = Vlan()
             switch = Switch()
 
