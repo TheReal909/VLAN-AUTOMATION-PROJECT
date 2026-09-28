@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import re
 from typing import Protocol
 
 from inventory.models import Facility, Switch
@@ -7,6 +8,7 @@ from .parsers import (
     LldpNeighbor,
     MacTableEntry,
     normalize_mac,
+    normalize_interface_name,
     parse_lldp_neighbors,
     parse_mac_table,
     parse_port_name,
@@ -114,7 +116,7 @@ class MacDiscoveryService:
 
             neighbors = self.connector.find_neighbors(current)
             neighbors_by_interface = {
-                neighbor.interface_name: neighbor for neighbor in neighbors
+                normalize_interface_name(neighbor.interface_name): neighbor for neighbor in neighbors
             }
             managed_neighbor_interfaces = {
                 interface_name
@@ -124,9 +126,10 @@ class MacDiscoveryService:
             endpoint_entries = []
             uplink_entries = []
             for entry in entries:
-                neighbor = neighbors_by_interface.get(entry.interface_name)
+                neighbor = neighbors_by_interface.get(normalize_interface_name(entry.interface_name))
                 has_endpoint_neighbor = bool(neighbor and neighbor.is_endpoint)
-                has_managed_neighbor = entry.interface_name in managed_neighbor_interfaces
+                interface_key = normalize_interface_name(entry.interface_name)
+                has_managed_neighbor = interface_key in managed_neighbor_interfaces
                 if has_endpoint_neighbor:
                     endpoint_entries.append(entry)
                     continue
@@ -134,7 +137,11 @@ class MacDiscoveryService:
                     uplink_entries.append(entry)
                 else:
                     port_name = self.connector.find_port_name(current, entry.interface_name)
-                    if "UPLNK" in port_name.upper():
+                    if (
+                        "UPLNK" in port_name.upper()
+                        or entry.is_trunk_candidate
+                        or self._is_likely_uplink_port(current, entry.interface_name)
+                    ):
                         uplink_entries.append(entry)
                     else:
                         endpoint_entries.append(entry)
@@ -153,6 +160,21 @@ class MacDiscoveryService:
             current = neighbor
         raise DiscoveryError(f"Discovery exceeded the {self.max_hops}-hop limit.")
 
+    @staticmethod
+    def _is_likely_uplink_port(switch: Switch, interface_name: str) -> bool:
+        match = re.fullmatch(r"(\d+)/(\d+)/(\d+)", normalize_interface_name(interface_name))
+        if not match:
+            return False
+        member, slot, port = (int(value) for value in match.groups())
+        family = switch.model_family
+        if family == Switch.ModelFamily.ICX_7150:
+            return slot == 2 or port > 48
+        if family == Switch.ModelFamily.ICX_7250:
+            return port > 48
+        if family == Switch.ModelFamily.ICX_8200:
+            return (slot == 1 and port in {1, 2}) or port > 48
+        return False
+
     def _resolve_neighbor(
         self,
         current: Switch,
@@ -161,7 +183,7 @@ class MacDiscoveryService:
         visited: set[int],
         neighbors_by_interface: dict[str, LldpNeighbor],
     ) -> Switch | None:
-        trunk_interfaces = {entry.interface_name for entry in entries}
+        trunk_interfaces = {normalize_interface_name(entry.interface_name) for entry in entries}
         candidates = [
             neighbor for interface_name, neighbor in neighbors_by_interface.items()
             if interface_name in trunk_interfaces

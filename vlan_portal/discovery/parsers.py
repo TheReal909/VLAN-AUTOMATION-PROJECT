@@ -26,6 +26,11 @@ _MAC_PATTERN = r"(?P<mac>[0-9a-fA-F]{2}(?:[:-]?[0-9a-fA-F]{2}){5}|[0-9a-fA-F]{4}
 _INTERFACE_PATTERN = r"(?P<interface>\d+/\d+/\d+|\d+/\d+|Trunk\d+|Port-channel\d+)"
 
 
+def normalize_interface_name(value: str) -> str:
+    match = re.search(r"\d+/\d+/\d+|\d+/\d+|Trunk\d+|Port-channel\d+", value, re.IGNORECASE)
+    return match.group(0).lower() if match else value.strip().lower()
+
+
 def normalize_mac(value: str) -> str:
     compact = re.sub(r"[^0-9a-fA-F]", "", value)
     if len(compact) != 12 or not re.fullmatch(r"[0-9a-fA-F]{12}", compact):
@@ -118,7 +123,7 @@ def parse_lldp_neighbors(output: str) -> list[LldpNeighbor]:
     current_ip = None
     current_device_type = None
     for line in output.splitlines():
-        interface_match = re.search(r"(?:Local Port|Local Intf|Interface)\s*[:：]\s*(\S+)", line, re.IGNORECASE)
+        interface_match = re.search(r"(?:Local Port|Local Intf|Interface)\s*[:：]\s*(.+?)\s*$", line, re.IGNORECASE)
         name_match = re.search(r"(?:System Name|Neighbor|Chassis Name)\s*[:：]\s*(\S+)", line, re.IGNORECASE)
         ip_match = re.search(r"(?:Management Address|Management IP|IP address)\s*[:：]\s*(\d{1,3}(?:\.\d{1,3}){3})", line, re.IGNORECASE)
         device_type_match = re.search(r"MED device type\s*[:：]\s*(.+?)\s*$", line, re.IGNORECASE)
@@ -127,7 +132,7 @@ def parse_lldp_neighbors(output: str) -> list[LldpNeighbor]:
                 neighbors.append(
                     LldpNeighbor(current_interface, current_name, current_ip, current_device_type)
                 )
-            current_interface = interface_match.group(1)
+            current_interface = normalize_interface_name(interface_match.group(1))
             current_name = None
             current_ip = None
             current_device_type = None
