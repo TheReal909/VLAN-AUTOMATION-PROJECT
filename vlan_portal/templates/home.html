@@ -1,10 +1,45 @@
-{% extends "base.html" %} {% block title %}Home{% endblock %} {% block content
-%}
-<p>Welcome to the VLAN automation portal.</p>
-<ul>
-  <li>Inventory</li>
-  <li><a href="{% url 'discovery' %}">MAC lookup</a></li>
-  <li>Changes</li>
-  <li>Audit</li>
-</ul>
+{% extends "base.html" %}
+
+{% block title %}Operations overview{% endblock %}
+{% block breadcrumb %}Overview{% endblock %}
+
+{% block content %}
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Network operations</p>
+      <h1>Operations overview</h1>
+      <p class="lede">Find a device, confirm its live switch location, then start a controlled VLAN request.</p>
+    </div>
+    <a class="button-link" href="{% url 'discovery' %}">Open MAC lookup</a>
+  </div>
+
+  <section class="metrics" aria-label="Inventory summary">
+    <div class="metric"><div class="metric-label">Active facilities</div><div class="metric-value">{{ facility_count }}</div><div class="metric-note">Configured locations</div></div>
+    <div class="metric"><div class="metric-label">Active switches</div><div class="metric-value">{{ switch_count }}</div><div class="metric-note">Logical switch stacks</div></div>
+    <div class="metric"><div class="metric-label">Saved observations</div><div class="metric-value">{{ observation_count }}</div><div class="metric-note">Last-known port locations</div></div>
+    <div class="metric"><div class="metric-label">Pending requests</div><div class="metric-value">{{ pending_change_count }}</div><div class="metric-note">Awaiting engineering review</div></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-heading">
+      <div><p class="eyebrow">Device workflow</p><h2>Start with a MAC address</h2></div>
+    </div>
+    <p class="lede">Live lookup begins at the selected facility’s MDF and follows confirmed switch neighbors. Cached observations are labeled separately and cannot authorize a VLAN request.</p>
+    <div class="action-row" style="margin-top: 20px">
+      <a class="button-link" href="{% url 'discovery' %}">Search for a device</a>
+      {% if user.is_staff %}<a class="button-link" href="{% url 'admin:index' %}" style="background: white; color: var(--ink); border-color: var(--line)">Manage inventory</a>{% endif %}
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-heading"><h2>Recent audit activity</h2>{% if user.is_staff %}<a href="{% url 'admin:audit_auditlog_changelist' %}">View audit trail</a>{% endif %}</div>
+    {% if recent_audits %}
+      <table class="data-table">
+        <thead><tr><th>Event</th><th>User</th><th>Facility</th><th>Switch</th><th>When</th></tr></thead>
+        <tbody>{% for event in recent_audits %}<tr><td><span class="pill">{{ event.get_event_type_display }}</span></td><td>{{ event.user.get_username }}</td><td>{{ event.facility_code|default:"—" }}</td><td>{{ event.switch.name|default:"—" }}</td><td>{{ event.created_at }}</td></tr>{% endfor %}</tbody>
+      </table>
+    {% else %}
+      <div class="empty-state">No audit activity has been recorded yet.</div>
+    {% endif %}
+  </section>
 {% endblock %}

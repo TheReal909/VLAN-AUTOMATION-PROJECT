@@ -3,14 +3,54 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{% block title %}VLAN Automation Portal{% endblock %}</title>
+    <meta name="color-scheme" content="light" />
+    <title>{% block title %}VLAN Operations{% endblock %} | Network Operations</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/portal.css' %}" />
   </head>
   <body>
-    <header>
-      <h1>VLAN Automation Portal</h1>
-    </header>
-    <main>
-      {% block content %}{% endblock %}
-    </main>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="{% url 'home' %}">
+          <span class="brand-mark">VO</span>
+          <span class="brand-name">VLAN Operations<small>Network services</small></span>
+        </a>
+        <div>
+          <p class="nav-label">Workspace</p>
+          <nav class="primary-nav" aria-label="Main navigation">
+            <a class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}"><span class="nav-icon">⌂</span>Overview</a>
+            <a class="{% if request.resolver_match.url_name == 'discovery' %}active{% endif %}" href="{% url 'discovery' %}"><span class="nav-icon">⌕</span>MAC lookup</a>
+            {% if user.is_staff %}
+              <a href="{% url 'admin:changes_vlanchangelog_changelist' %}"><span class="nav-icon">⇄</span>Change review</a>
+              <a href="{% url 'admin:inventory_switch_changelist' %}"><span class="nav-icon">▦</span>Inventory</a>
+              <a href="{% url 'admin:audit_auditlog_changelist' %}"><span class="nav-icon">≡</span>Audit trail</a>
+            {% endif %}
+          </nav>
+        </div>
+        <div class="sidebar-footer">
+          {% if user.is_authenticated %}
+            Signed in as <strong>{{ user.get_username }}</strong>
+          {% else %}
+            <a href="{% url 'login' %}">Sign in</a>
+          {% endif %}
+        </div>
+      </aside>
+      <div class="main-area">
+        <header class="topbar">
+          <div class="breadcrumb">Operations <span aria-hidden="true">/</span> {% block breadcrumb %}Overview{% endblock %}</div>
+          <div class="account-tools">
+            {% if user.is_authenticated %}
+              <span>{{ user.get_username }}</span>
+              <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="text-button" type="submit">Sign out</button></form>
+            {% else %}
+              <a href="{% url 'login' %}">Sign in</a>
+            {% endif %}
+          </div>
+        </header>
+        <main class="content">
+          {% block content %}{% endblock %}
+        </main>
+      </div>
+    </div>
   </body>
 </html>

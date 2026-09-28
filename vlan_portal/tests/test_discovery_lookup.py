@@ -54,7 +54,7 @@ class MacLookupTests(TestCase):
             {"facility": other_facility.pk, "mac_address": "02:00:00:00:00:01"},
         )
 
-        self.assertContains(response, "No stored observation was found")
+        self.assertContains(response, "No saved observation matches")
         self.assertNotContains(response, "IDF-02")
 
     @override_settings(DISCOVERY_SSH_USERNAME="reader", DISCOVERY_SSH_PASSWORD="secret")
@@ -102,7 +102,8 @@ class MacLookupTests(TestCase):
             },
         )
 
-        self.assertContains(response, "Last known observation, not confirmed by this search")
+        self.assertContains(response, "Last known only")
+        self.assertContains(response, "Not confirmed live")
         self.assertNotContains(response, "Device found")
         self.assertNotContains(response, "Request a VLAN change")
         self.assertContains(response, "SSH command failed")

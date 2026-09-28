@@ -2,6 +2,6 @@ from django.test import SimpleTestCase
 
 
 class HealthTests(SimpleTestCase):
-    def test_root_route_returns_200(self):
+    def test_root_route_redirects_anonymous_users_to_login(self):
         response = self.client.get("/")
-        self.assertEqual(response.status_code, 200)
+        self.assertRedirects(response, "/accounts/login/?next=/", fetch_redirect_response=False)

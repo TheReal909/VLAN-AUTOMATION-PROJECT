@@ -1,27 +1,29 @@
 {% extends "base.html" %}
 
 {% block title %}Request VLAN Change{% endblock %}
+{% block breadcrumb %}Change request{% endblock %}
 
 {% block content %}
-  <h2>Request VLAN change</h2>
+  <div class="page-heading"><div><p class="eyebrow">Change control</p><h1>Request VLAN change</h1><p class="lede">Review the live-confirmed endpoint and choose an allowed target VLAN.</p></div></div>
   {% if stale_observation %}
-    <p role="alert">This saved location has not been confirmed by a recent live switch lookup. Run live discovery again before requesting a change.</p>
-    <p><a href="{% url 'discovery' %}">Return to MAC lookup</a></p>
+    <section class="panel"><div class="result-banner warning" role="alert"><span class="status-dot"></span><div><div class="result-title">Live confirmation required</div><p class="result-copy">This saved location is missing a recent switch confirmation. Return to lookup and run live discovery before requesting a change.</p></div></div><p style="margin:18px 0 0"><a class="button-link" href="{% url 'discovery' %}">Return to MAC lookup</a></p></section>
   {% else %}
-  <dl>
-    <dt>MAC address</dt>
-    <dd>{{ observation.mac_address }}</dd>
-    <dt>Switch</dt>
-    <dd>{{ observation.switch.name }}</dd>
-    <dt>Interface</dt>
-    <dd>{{ observation.interface_name }}</dd>
-    <dt>Current VLAN</dt>
-    <dd>{{ observation.vlan_id }}</dd>
-  </dl>
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Create pending request</button>
-  </form>
+    <section class="panel">
+      <div class="result-banner"><span class="status-dot"></span><div><div class="result-title">Location confirmed live</div><p class="result-copy">Confirmation time: {{ observation.last_live_discovery_at }}</p></div></div>
+      <dl class="result-grid">
+        <div class="result-item"><dt>MAC address</dt><dd>{{ observation.mac_address }}</dd></div>
+        <div class="result-item"><dt>Switch</dt><dd>{{ observation.switch.name }}</dd></div>
+        <div class="result-item"><dt>Interface</dt><dd>{{ observation.interface_name }}</dd></div>
+        <div class="result-item"><dt>Current VLAN</dt><dd>{{ observation.vlan_id }}</dd></div>
+      </dl>
+    </section>
+    <section class="panel">
+      <h2>Target VLAN</h2>
+      <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Submit for approval</button>
+      </form>
+    </section>
   {% endif %}
 {% endblock %}

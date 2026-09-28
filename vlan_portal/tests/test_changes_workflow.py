@@ -96,7 +96,7 @@ class VlanChangeWorkflowTests(TestCase):
         self.assertEqual(response.status_code, 409)
         self.assertContains(
             response,
-            "not been confirmed by a recent live switch lookup",
+            "missing a recent switch confirmation",
             status_code=409,
         )
         self.assertNotContains(response, "Create pending request", status_code=409)

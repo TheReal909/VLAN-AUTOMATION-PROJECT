@@ -1,13 +1,29 @@
 from django.contrib import admin
-from django.http import HttpResponse
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
 from django.urls import include, path
 
 from changes.views import request_change, request_created
 from discovery.views import index as discovery_index
 
 
+@login_required
 def home(request):
-    return HttpResponse("VLAN Automation Portal is ready.")
+    from audit.models import AuditLog
+    from changes.models import VlanChangeLog
+    from discovery.models import PortObservation
+    from inventory.models import Facility, Switch
+
+    context = {
+        "facility_count": Facility.objects.filter(is_active=True).count(),
+        "switch_count": Switch.objects.filter(is_active=True).count(),
+        "observation_count": PortObservation.objects.count(),
+        "pending_change_count": VlanChangeLog.objects.filter(
+            status=VlanChangeLog.Status.PENDING
+        ).count(),
+        "recent_audits": AuditLog.objects.select_related("user", "switch")[:5],
+    }
+    return render(request, "home.html", context)
 
 
 urlpatterns = [

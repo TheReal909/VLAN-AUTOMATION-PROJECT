@@ -1,23 +1,22 @@
 {% extends "base.html" %}
 
 {% block title %}VLAN Change Requested{% endblock %}
+{% block breadcrumb %}Request submitted{% endblock %}
 
 {% block content %}
   {% if change %}
-    <h2>VLAN change request created</h2>
-    <p>The request is pending approval and has not changed the switch.</p>
-    <dl>
-      <dt>MAC address</dt>
-      <dd>{{ change.mac_address }}</dd>
-      <dt>Switch</dt>
-      <dd>{{ change.switch.name }}</dd>
-      <dt>Interface</dt>
-      <dd>{{ change.interface_name }}</dd>
-      <dt>Change</dt>
-      <dd>VLAN {{ change.previous_vlan.vlan_id }} to VLAN {{ change.requested_vlan.vlan_id }}</dd>
-      <dt>Status</dt>
-      <dd>{{ change.status }}</dd>
-    </dl>
+    <div class="page-heading"><div><p class="eyebrow">Change control</p><h1>Request submitted</h1><p class="lede">The request is pending engineering approval. The switch has not been changed.</p></div></div>
+    <section class="panel">
+      <div class="result-banner warning"><span class="status-dot"></span><div><div class="result-title">Pending approval</div><p class="result-copy">No configuration has been sent to the switch.</p></div></div>
+      <dl class="result-grid">
+        <div class="result-item"><dt>MAC address</dt><dd>{{ change.mac_address }}</dd></div>
+        <div class="result-item"><dt>Switch</dt><dd>{{ change.switch.name }}</dd></div>
+        <div class="result-item"><dt>Interface</dt><dd>{{ change.interface_name }}</dd></div>
+        <div class="result-item"><dt>Status</dt><dd>{{ change.get_status_display }}</dd></div>
+        <div class="result-item"><dt>Current VLAN</dt><dd>{{ change.previous_vlan.vlan_id }}</dd></div>
+        <div class="result-item"><dt>Requested VLAN</dt><dd>{{ change.requested_vlan.vlan_id }}</dd></div>
+      </dl>
+    </section>
   {% else %}
     <p>No change request was found.</p>
   {% endif %}
