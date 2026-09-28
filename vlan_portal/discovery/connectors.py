@@ -104,12 +104,17 @@ class MacDiscoveryService:
             neighbors_by_interface = {
                 neighbor.interface_name: neighbor for neighbor in neighbors
             }
+            managed_neighbor_interfaces = {
+                interface_name
+                for interface_name, neighbor in neighbors_by_interface.items()
+                if self._resolve_managed_switch(neighbor, facility) is not None
+            }
             endpoint_entries = []
             uplink_entries = []
             for entry in entries:
                 port_name = self.connector.find_port_name(current, entry.interface_name)
                 has_uplink_name = "UPLNK" in port_name.upper()
-                has_managed_neighbor = entry.interface_name in neighbors_by_interface
+                has_managed_neighbor = entry.interface_name in managed_neighbor_interfaces
                 if has_uplink_name or has_managed_neighbor:
                     uplink_entries.append(entry)
                 else:
@@ -144,7 +149,13 @@ class MacDiscoveryService:
         ]
         if len(candidates) != 1:
             return None
-        neighbor = candidates[0]
+        managed_switch = self._resolve_managed_switch(candidates[0], facility)
+        if managed_switch is None or managed_switch.pk in visited:
+            return None
+        return managed_switch
+
+    @staticmethod
+    def _resolve_managed_switch(neighbor: LldpNeighbor, facility: Facility) -> Switch | None:
         managed = list(facility.switches.filter(is_active=True).filter(
             management_ip=neighbor.management_ip
         )) if neighbor.management_ip else []
@@ -152,6 +163,6 @@ class MacDiscoveryService:
             managed = [switch for switch in facility.switches.filter(is_active=True)
                        if switch.name.lower() == neighbor.neighbor_name.lower()
                        or switch.hostname.lower() == neighbor.neighbor_name.lower()]
-        if len(managed) != 1 or managed[0].pk in visited:
+        if len(managed) != 1:
             return None
         return managed[0]

@@ -78,6 +78,21 @@ class MacDiscoveryServiceTests(TestCase):
         self.assertEqual(result.entry.vlan_id, 300)
         self.assertEqual(connector.queried_switches, ["MDF-01"])
 
+    def test_endpoint_lldp_neighbor_is_not_mistaken_for_a_switch_uplink(self):
+        mac = "a83c.a534.a128"
+        connector = FakeConnector(
+            mac_results={"MDF-01": [MacTableEntry(mac, 1, "1/1/5", False)]},
+            neighbors={
+                "MDF-01": [LldpNeighbor("1/1/5", "a83c.a534.a128", None)],
+            },
+        )
+
+        result = MacDiscoveryService(connector).locate(self.facility, mac)
+
+        self.assertEqual(result.switch, self.mdf)
+        self.assertEqual(result.entry.interface_name, "1/1/5")
+        self.assertEqual(connector.queried_switches, ["MDF-01"])
+
     def test_service_rejects_unresolved_uplink(self):
         mac = "aa:bb:cc:dd:ee:ff"
         connector = FakeConnector(
