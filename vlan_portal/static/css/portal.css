@@ -113,6 +113,18 @@ details.trace summary { color: var(--muted); font-size: 11px; font-weight: 750; 
 .data-table th { padding: 10px 12px; border-bottom: 1px solid var(--line); color: #718493; font-size: 9px; letter-spacing: .6px; text-transform: uppercase; }
 .data-table td { padding: 12px; border-bottom: 1px solid #e8eef1; font-size: 11px; }
 .pill { display: inline-flex; padding: 5px 8px; border-radius: 99px; background: #edf4f8; color: #4c687e; font-size: 9px; font-weight: 800; }
+.request-list { display: grid; gap: 13px; }
+.request-card { margin: 0; padding: 19px; }
+.request-card-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 16px; }
+.request-card-heading h2 { margin: 0 0 5px; font-size: 15px; }
+.request-meta { margin: 0; color: var(--muted); font-size: 11px; }
+.status-pill { display: inline-flex; flex: 0 0 auto; padding: 6px 9px; border-radius: 99px; background: #edf4f8; color: #486579; font-size: 9px; font-weight: 850; text-transform: uppercase; letter-spacing: .45px; }
+.status-pending { background: #fff4dc; color: #8c5b06; }
+.status-approved { background: #eaf2ff; color: #285d96; }
+.status-applied { background: #e7f6ef; color: #20724a; }
+.status-failed { background: #fff0ee; color: #a3332c; }
+.request-card-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 15px; color: var(--muted); font-size: 10px; }
+.request-card-footer a { margin-left: auto; font-weight: 750; }
 .login-wrap { display: grid; place-items: center; min-height: calc(100vh - 213px); padding: 30px; }
 .login-panel { width: min(410px, 100%); padding: 28px; border: 1px solid #d6e3ec; border-radius: 10px; background: white; box-shadow: 0 14px 34px rgb(22 55 80 / 10%); }
 .errorlist { margin: 6px 0; padding-left: 18px; color: var(--red); font-size: 11px; }
@@ -145,6 +157,8 @@ details.trace summary { color: var(--muted); font-size: 11px; font-weight: 750; 
   .service-grid { grid-template-columns: 1fr; gap: 11px; }
   .service-card { min-height: 145px; }
   .home-footnote { flex-wrap: wrap; gap: 7px; font-size: 9px; }
+  .request-card-heading { flex-direction: column; }
+  .request-card-footer a { margin-left: 0; }
   .metric { min-height: 96px; padding: 13px; }
   .metric-value { font-size: 25px; }
   .panel { padding: 16px; }
