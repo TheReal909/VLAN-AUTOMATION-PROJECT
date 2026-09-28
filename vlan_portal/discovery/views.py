@@ -12,6 +12,7 @@ def index(request):
     observation = None
     live_result = None
     live_error = None
+    live_trace = []
     searched = bool(request.GET or request.POST)
     if form.is_valid():
         observation = (
@@ -46,6 +47,8 @@ def index(request):
                     )
                 except DiscoveryError as exc:
                     live_error = str(exc)
+                finally:
+                    live_trace = connector.command_trace
     return render(
         request,
         "discovery/lookup.html",
@@ -54,6 +57,7 @@ def index(request):
             "observation": observation,
             "live_result": live_result,
             "live_error": live_error,
+            "live_trace": live_trace,
             "searched": searched,
         },
     )

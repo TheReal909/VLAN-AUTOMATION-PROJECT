@@ -63,19 +63,52 @@ def parse_mac_table(output: str, mac_address: str) -> list[MacTableEntry]:
             continue
         if normalized != target:
             continue
-        vlan_match = re.search(r"\b(?:vlan\s+)?(?P<vlan>\d{1,4})\b", line, re.IGNORECASE)
-        if not vlan_match:
+        tokens = line.split()
+        mac_index = next(
+            (index for index, token in enumerate(tokens) if _token_is_mac(token, target)),
+            None,
+        )
+        interface_index = next(
+            (index for index, token in enumerate(tokens) if token == interface_match.group("interface")),
+            None,
+        )
+        if mac_index is None or interface_index is None:
+            continue
+        numeric_tokens = []
+        for index, token in enumerate(tokens):
+            if index in {mac_index, interface_index}:
+                continue
+            if re.fullmatch(r"\d{1,4}", token):
+                value = int(token)
+                if 1 <= value <= 4094:
+                    numeric_tokens.append((index, value))
+        preceding_vlan = [item for item in numeric_tokens if item[0] < mac_index]
+        following_vlan = [item for item in numeric_tokens if item[0] > max(mac_index, interface_index)]
+        if preceding_vlan:
+            vlan_id = preceding_vlan[-1][1]
+        elif following_vlan:
+            vlan_id = following_vlan[-1][1]
+        elif len(numeric_tokens) == 1:
+            vlan_id = numeric_tokens[0][1]
+        else:
             continue
         interface_name = interface_match.group("interface")
         entries.append(
             MacTableEntry(
                 mac_address=normalized,
-                vlan_id=int(vlan_match.group("vlan")),
+                vlan_id=vlan_id,
                 interface_name=interface_name,
                 is_trunk_candidate=bool(re.search(r"trunk|port-channel", line, re.IGNORECASE)),
             )
         )
     return entries
+
+
+def _token_is_mac(token: str, target: str) -> bool:
+    try:
+        return normalize_mac(token) == target
+    except ValueError:
+        return False
 
 
 def parse_lldp_neighbors(output: str) -> list[LldpNeighbor]:

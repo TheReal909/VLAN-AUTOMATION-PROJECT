@@ -31,6 +31,7 @@ class NetmikoReadOnlyConnector:
         self.password = password
         self.port = port
         self.timeout = timeout
+        self.command_trace: list[dict[str, str]] = []
 
     def _send(self, switch: Switch, command: str) -> str:
         from netmiko import ConnectHandler
@@ -49,8 +50,15 @@ class NetmikoReadOnlyConnector:
         except Exception as exc:
             raise DiscoveryError(f"Could not connect to {switch.name} for read-only discovery.") from exc
         try:
-            return connection.send_command(command, read_timeout=self.timeout)
+            output = connection.send_command(command, read_timeout=self.timeout)
+            self.command_trace.append(
+                {"switch": switch.name, "command": command, "output": output[:12000]}
+            )
+            return output
         except Exception as exc:
+            self.command_trace.append(
+                {"switch": switch.name, "command": command, "output": "Command failed."}
+            )
             raise DiscoveryError(
                 f"Read-only command '{command}' failed on {switch.name}; check command support, privilege, and timeout."
             ) from exc

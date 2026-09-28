@@ -32,6 +32,18 @@ class DiscoveryParserTests(SimpleTestCase):
         self.assertFalse(entries[0].is_trunk_candidate)
         self.assertTrue(entries[1].is_trunk_candidate)
 
+    def test_parse_mac_table_does_not_take_vlan_from_numeric_mac_group(self):
+        output = """
+        MAC-Address     Port     Type       VLAN
+        fc5c.4530.165f  2/1/21   Dynamic    1
+        """
+
+        entries = parse_mac_table(output, "fc5c.4530.165f")
+
+        self.assertEqual(len(entries), 1)
+        self.assertEqual(entries[0].vlan_id, 1)
+        self.assertEqual(entries[0].interface_name, "2/1/21")
+
     def test_parse_lldp_neighbors_collects_name_and_management_ip(self):
         output = """
         Local Port: 1/1/48

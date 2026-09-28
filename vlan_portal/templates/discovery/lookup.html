@@ -41,6 +41,19 @@
   <p role="alert">{{ live_error }}</p>
 {% endif %}
 
+{% if live_trace and user.is_staff %}
+  <details>
+    <summary>Live discovery commands and responses</summary>
+    {% for item in live_trace %}
+      <section>
+        <h3>{{ item.switch }}</h3>
+        <pre>{{ item.command }}
+{{ item.output }}</pre>
+      </section>
+    {% endfor %}
+  </details>
+{% endif %}
+
 {% if live_result %}
   <section aria-label="Live discovery result">
     <h2>Live discovery result</h2>
