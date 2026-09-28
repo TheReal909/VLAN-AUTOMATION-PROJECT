@@ -51,7 +51,9 @@ class NetmikoReadOnlyConnector:
         try:
             return connection.send_command(command, read_timeout=self.timeout)
         except Exception as exc:
-            raise DiscoveryError(f"Read-only discovery failed on {switch.name}.") from exc
+            raise DiscoveryError(
+                f"Read-only command '{command}' failed on {switch.name}; check command support, privilege, and timeout."
+            ) from exc
         finally:
             connection.disconnect()
 
@@ -112,19 +114,20 @@ class MacDiscoveryService:
             endpoint_entries = []
             uplink_entries = []
             for entry in entries:
-                port_name = self.connector.find_port_name(current, entry.interface_name)
-                has_uplink_name = "UPLNK" in port_name.upper()
-                has_managed_neighbor = entry.interface_name in managed_neighbor_interfaces
                 neighbor = neighbors_by_interface.get(entry.interface_name)
                 has_endpoint_neighbor = bool(neighbor and neighbor.is_endpoint)
-                if has_endpoint_neighbor and (has_uplink_name or has_managed_neighbor):
-                    raise DiscoveryError(
-                        f"Port {entry.interface_name} on {current.name} has conflicting uplink and endpoint evidence."
-                    )
-                if has_uplink_name or has_managed_neighbor:
+                has_managed_neighbor = entry.interface_name in managed_neighbor_interfaces
+                if has_endpoint_neighbor:
+                    endpoint_entries.append(entry)
+                    continue
+                if has_managed_neighbor:
                     uplink_entries.append(entry)
                 else:
-                    endpoint_entries.append(entry)
+                    port_name = self.connector.find_port_name(current, entry.interface_name)
+                    if "UPLNK" in port_name.upper():
+                        uplink_entries.append(entry)
+                    else:
+                        endpoint_entries.append(entry)
             if not endpoint_entries and not uplink_entries:
                 raise DiscoveryError(f"Could not verify the port role on {current.name}.")
             if endpoint_entries and uplink_entries:

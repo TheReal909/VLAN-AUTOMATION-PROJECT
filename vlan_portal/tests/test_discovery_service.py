@@ -1,6 +1,8 @@
+from unittest.mock import patch
+
 from django.test import TestCase
 
-from discovery.connectors import DiscoveryError, MacDiscoveryService
+from discovery.connectors import DiscoveryError, MacDiscoveryService, NetmikoReadOnlyConnector
 from discovery.parsers import LldpNeighbor, MacTableEntry
 from inventory.models import Facility, Switch
 
@@ -95,7 +97,40 @@ class MacDiscoveryServiceTests(TestCase):
         self.assertEqual(result.entry.interface_name, "1/1/5")
         self.assertEqual(connector.queried_switches, ["MDF-01"])
 
-    def test_endpoint_class_conflicting_with_uplink_name_stops_safely(self):
+    def test_endpoint_class_lldp_does_not_query_interface_description(self):
+        mac = "a83c.a534.a128"
+        connector = FakeConnector(
+            mac_results={"MDF-01": [MacTableEntry(mac, 1, "1/1/5", False)]},
+            neighbors={
+                "MDF-01": [
+                    LldpNeighbor("1/1/5", "a83c.a534.a128", None, "Endpoint Class I")
+                ],
+            },
+        )
+        connector.find_port_name = lambda *args: (_ for _ in ()).throw(
+            AssertionError("Endpoint-class LLDP should make this query unnecessary")
+        )
+
+        result = MacDiscoveryService(connector).locate(self.facility, mac)
+
+        self.assertEqual(result.entry.interface_name, "1/1/5")
+
+    def test_read_command_failure_names_the_command(self):
+        connector = NetmikoReadOnlyConnector("reader", "secret")
+        connection = type("Connection", (), {})()
+
+        def fail_command(self, command, read_timeout):
+            raise RuntimeError("unsupported command")
+
+        connection.send_command = fail_command.__get__(connection)
+        connection.disconnect = lambda: None
+        switch = type("Switch", (), {"name": "MDF-01", "management_ip": "192.0.2.1"})()
+
+        with patch("netmiko.ConnectHandler", return_value=connection):
+            with self.assertRaisesMessage(DiscoveryError, "show lldp neighbors detail"):
+                connector.find_neighbors(switch)
+
+    def test_endpoint_class_is_decisive_even_if_port_name_says_uplink(self):
         mac = "a83c.a534.a128"
         connector = FakeConnector(
             mac_results={"MDF-01": [MacTableEntry(mac, 1, "1/1/5", False)]},
@@ -107,8 +142,10 @@ class MacDiscoveryServiceTests(TestCase):
         )
         connector.find_port_name = lambda switch, interface: "C2-CP_UPLNK_PT_IDF"
 
-        with self.assertRaisesMessage(DiscoveryError, "conflicting uplink and endpoint evidence"):
-            MacDiscoveryService(connector).locate(self.facility, mac)
+        result = MacDiscoveryService(connector).locate(self.facility, mac)
+
+        self.assertEqual(result.switch, self.mdf)
+        self.assertEqual(result.entry.interface_name, "1/1/5")
 
     def test_service_rejects_unresolved_uplink(self):
         mac = "aa:bb:cc:dd:ee:ff"
