@@ -9,48 +9,39 @@
     <link rel="stylesheet" href="{% static 'css/portal.css' %}" />
   </head>
   <body>
-    <div class="app-shell">
-      <aside class="sidebar">
-        <a class="brand" href="{% url 'home' %}">
-          <span class="brand-mark">VO</span>
-          <span class="brand-name">VLAN Operations<small>Network services</small></span>
+    <header class="masthead">
+      <div class="masthead-inner">
+        <a class="brand" href="{% url 'home' %}" aria-label="VLAN Operations home">
+          <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+          <span class="brand-name">VLAN Operations<small>NETWORK INFRASTRUCTURE &amp; OPERATIONS</small></span>
         </a>
-        <div>
-          <p class="nav-label">Workspace</p>
-          <nav class="primary-nav" aria-label="Main navigation">
-            <a class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}"><span class="nav-icon">⌂</span>Overview</a>
-            <a class="{% if request.resolver_match.url_name == 'discovery' %}active{% endif %}" href="{% url 'discovery' %}"><span class="nav-icon">⌕</span>MAC lookup</a>
-            {% if user.is_staff %}
-              <a href="{% url 'admin:changes_vlanchangelog_changelist' %}"><span class="nav-icon">⇄</span>Change review</a>
-              <a href="{% url 'admin:inventory_switch_changelist' %}"><span class="nav-icon">▦</span>Inventory</a>
-              <a href="{% url 'admin:audit_auditlog_changelist' %}"><span class="nav-icon">≡</span>Audit trail</a>
-            {% endif %}
-          </nav>
-        </div>
-        <div class="sidebar-footer">
+        <div class="masthead-tools">
           {% if user.is_authenticated %}
-            Signed in as <strong>{{ user.get_username }}</strong>
+            <span class="user-chip">{{ user.get_username }}</span>
+            <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="masthead-link" type="submit">Sign out</button></form>
           {% else %}
-            <a href="{% url 'login' %}">Sign in</a>
+            <a class="masthead-link" href="{% url 'login' %}">Sign in</a>
           {% endif %}
         </div>
-      </aside>
-      <div class="main-area">
-        <header class="topbar">
-          <div class="breadcrumb">Operations <span aria-hidden="true">/</span> {% block breadcrumb %}Overview{% endblock %}</div>
-          <div class="account-tools">
-            {% if user.is_authenticated %}
-              <span>{{ user.get_username }}</span>
-              <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="text-button" type="submit">Sign out</button></form>
-            {% else %}
-              <a href="{% url 'login' %}">Sign in</a>
-            {% endif %}
-          </div>
-        </header>
-        <main class="content">
-          {% block content %}{% endblock %}
-        </main>
       </div>
-    </div>
+    </header>
+    <nav class="site-nav" aria-label="Main navigation">
+      <div class="site-nav-inner">
+        <a class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}">Overview</a>
+        <a class="{% if request.resolver_match.url_name == 'discovery' %}active{% endif %}" href="{% url 'discovery' %}">MAC lookup</a>
+        {% if user.is_staff %}
+          <a href="{% url 'admin:changes_vlanchangelog_changelist' %}">Change review</a>
+          <a href="{% url 'admin:inventory_switch_changelist' %}">Inventory</a>
+          <a href="{% url 'admin:audit_auditlog_changelist' %}">Audit trail</a>
+        {% endif %}
+      </div>
+    </nav>
+    <main class="main-area">
+      <div class="content">
+        <div class="breadcrumb">Operations <span aria-hidden="true">/</span> {% block breadcrumb %}Overview{% endblock %}</div>
+        {% block content %}{% endblock %}
+      </div>
+      <footer class="site-footer">Networking Infrastructure &amp; Operations</footer>
+    </main>
   </body>
 </html>
