@@ -16,7 +16,14 @@
     <form method="post">
       {% csrf_token %}
       <div class="field-row">
-        <div>{{ form.facility.label_tag }}{{ form.facility }}{{ form.facility.errors }}</div>
+        <div class="facility-picker" data-facility-picker>
+          <label for="facility-search">Facility</label>
+          <input id="facility-search" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="facility-options" aria-describedby="facility-picker-help" placeholder="Search by facility code or name" autocomplete="off">
+          <div id="facility-options" class="facility-options" role="listbox" hidden></div>
+          <div id="facility-picker-help" class="helptext">Type a facility code or name, then choose a match.</div>
+          {{ form.facility }}
+          {{ form.facility.errors }}
+        </div>
         <div>{{ form.mac_address.label_tag }}{{ form.mac_address }}{{ form.mac_address.help_text }}{{ form.mac_address.errors }}</div>
       </div>
       <div class="action-row">

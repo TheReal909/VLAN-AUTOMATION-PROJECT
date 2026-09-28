@@ -8,6 +8,13 @@ class MacLookupForm(forms.Form):
     facility = forms.ModelChoiceField(
         queryset=Facility.objects.filter(is_active=True),
         empty_label="Select a facility",
+        widget=forms.Select(
+            attrs={
+                "class": "facility-native-select",
+                "tabindex": "-1",
+                "aria-hidden": "true",
+            }
+        ),
     )
     mac_address = forms.CharField(
         max_length=17,

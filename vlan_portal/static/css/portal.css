@@ -87,6 +87,14 @@ h3 { font-size: 13px; }
 .footnote-separator { color: #afbfca; }
 .action-row { display: flex; flex-wrap: wrap; gap: 10px; }
 .field-row { display: grid; grid-template-columns: minmax(220px, .8fr) minmax(280px, 1.2fr); gap: 17px; }
+.facility-picker { position: relative; min-width: 0; }
+.facility-native-select { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; clip-path: inset(50%) !important; }
+.facility-options { position: absolute; z-index: 30; top: calc(100% - 1px); right: 0; left: 0; max-height: 280px; overflow-y: auto; border: 1px solid #c4d3df; border-radius: 0 0 7px 7px; background: #fff; box-shadow: 0 12px 22px rgb(22 55 80 / 15%); }
+.facility-options[hidden] { display: none; }
+.facility-option { padding: 10px 12px; color: #294458; font-size: 12px; cursor: pointer; }
+.facility-option + .facility-option { border-top: 1px solid #edf2f5; }
+.facility-option:hover, .facility-option.active { background: #eaf4fb; color: #104f7e; }
+.facility-empty { padding: 12px; color: var(--muted); font-size: 11px; }
 form p { margin: 0 0 15px; }
 form label { display: block; margin-bottom: 7px; color: #344f65; font-size: 11px; font-weight: 750; }
 input[type=text], input[type=password], input[type=email], select { width: 100%; min-height: 41px; padding: 9px 11px; border: 1px solid #c4d3df; border-radius: 6px; background: white; color: var(--ink); }
