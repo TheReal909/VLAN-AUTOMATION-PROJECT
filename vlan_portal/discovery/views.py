@@ -4,6 +4,7 @@ from django.shortcuts import render
 from .connectors import DiscoveryError, MacDiscoveryService, NetmikoReadOnlyConnector
 from .forms import MacLookupForm
 from .models import PortObservation
+from .parsers import mac_address_variants
 
 
 def index(request):
@@ -17,7 +18,7 @@ def index(request):
             PortObservation.objects.select_related("switch", "switch__facility")
             .filter(
                 switch__facility=form.cleaned_data["facility"],
-                mac_address__iexact=form.cleaned_data["mac_address"],
+                mac_address__in=mac_address_variants(form.cleaned_data["mac_address"]),
             )
             .first()
         )

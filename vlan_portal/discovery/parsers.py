@@ -25,7 +25,23 @@ def normalize_mac(value: str) -> str:
     compact = re.sub(r"[^0-9a-fA-F]", "", value)
     if len(compact) != 12 or not re.fullmatch(r"[0-9a-fA-F]{12}", compact):
         raise ValueError(f"Invalid MAC address: {value}")
-    return ":".join(compact[index:index + 2].lower() for index in range(0, 12, 2))
+    compact = compact.upper()
+    return ".".join(compact[index:index + 4] for index in range(0, 12, 4))
+
+
+def mac_address_variants(value: str) -> set[str]:
+    normalized = normalize_mac(value)
+    compact = normalized.replace(".", "")
+    return {
+        normalized,
+        normalized.lower(),
+        ":".join(compact[index:index + 2] for index in range(0, 12, 2)),
+        ":".join(compact[index:index + 2].lower() for index in range(0, 12, 2)),
+        "-".join(compact[index:index + 2] for index in range(0, 12, 2)),
+        "-".join(compact[index:index + 2].lower() for index in range(0, 12, 2)),
+        compact,
+        compact.lower(),
+    }
 
 
 def parse_mac_table(output: str, mac_address: str) -> list[MacTableEntry]:

@@ -6,6 +6,7 @@ from inventory.models import Facility, Switch
 from .parsers import (
     LldpNeighbor,
     MacTableEntry,
+    normalize_mac,
     parse_lldp_neighbors,
     parse_mac_table,
     parse_port_name,
@@ -55,8 +56,9 @@ class NetmikoReadOnlyConnector:
             connection.disconnect()
 
     def find_mac(self, switch: Switch, mac_address: str) -> list[MacTableEntry]:
-        output = self._send(switch, f"show mac-address {mac_address}")
-        return parse_mac_table(output, mac_address)
+        ruckus_mac = normalize_mac(mac_address)
+        output = self._send(switch, f"show mac-address {ruckus_mac}")
+        return parse_mac_table(output, ruckus_mac)
 
     def find_neighbors(self, switch: Switch) -> list[LldpNeighbor]:
         return parse_lldp_neighbors(self._send(switch, "show lldp neighbors detail"))
