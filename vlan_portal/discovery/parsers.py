@@ -25,7 +25,7 @@ def normalize_mac(value: str) -> str:
     compact = re.sub(r"[^0-9a-fA-F]", "", value)
     if len(compact) != 12 or not re.fullmatch(r"[0-9a-fA-F]{12}", compact):
         raise ValueError(f"Invalid MAC address: {value}")
-    compact = compact.upper()
+    compact = compact.lower()
     return ".".join(compact[index:index + 4] for index in range(0, 12, 4))
 
 

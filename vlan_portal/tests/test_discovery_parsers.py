@@ -10,9 +10,10 @@ from discovery.parsers import normalize_mac, parse_interface_is_trunk, parse_lld
 
 class DiscoveryParserTests(SimpleTestCase):
     def test_normalize_mac_accepts_common_formats(self):
-        self.assertEqual(normalize_mac("a8:3c:a5:34:a1:28"), "A83C.A534.A128")
-        self.assertEqual(normalize_mac("a83c.a534.a128"), "A83C.A534.A128")
-        self.assertEqual(normalize_mac("A83C.A534.A128"), "A83C.A534.A128")
+        self.assertEqual(normalize_mac("a8:3c:a5:34:a1:28"), "a83c.a534.a128")
+        self.assertEqual(normalize_mac("a83c.a534.a128"), "a83c.a534.a128")
+        self.assertEqual(normalize_mac("A83C.A534.A128"), "a83c.a534.a128")
+        self.assertEqual(normalize_mac("AC71.2EDF.1092"), "ac71.2edf.1092")
 
     def test_parse_mac_table_finds_endpoint_and_trunk_entries(self):
         output = """
@@ -26,7 +27,7 @@ class DiscoveryParserTests(SimpleTestCase):
 
         self.assertEqual(len(entries), 2)
         self.assertEqual(entries[0].vlan_id, 201)
-        self.assertEqual(entries[0].mac_address, "AABB.CCDD.EEFF")
+        self.assertEqual(entries[0].mac_address, "aabb.ccdd.eeff")
         self.assertEqual(entries[0].interface_name, "2/1/15")
         self.assertFalse(entries[0].is_trunk_candidate)
         self.assertTrue(entries[1].is_trunk_candidate)
@@ -56,12 +57,12 @@ class DiscoveryParserTests(SimpleTestCase):
         )
 
     @patch.object(NetmikoReadOnlyConnector, "_send")
-    def test_switch_command_uses_uppercase_dotted_mac(self, send):
-        send.return_value = "201 A83C.A534.A128 Dynamic 2/1/15"
+    def test_switch_command_uses_lowercase_dotted_mac(self, send):
+        send.return_value = "201 a83c.a534.a128 Dynamic 2/1/15"
         switch = type("Switch", (), {"name": "MDF-01"})()
         connector = NetmikoReadOnlyConnector("reader", "secret")
 
         entries = connector.find_mac(switch, "a8:3c:a5:34:a1:28")
 
-        send.assert_called_once_with(switch, "show mac-address A83C.A534.A128")
-        self.assertEqual(entries[0].mac_address, "A83C.A534.A128")
+        send.assert_called_once_with(switch, "show mac-address a83c.a534.a128")
+        self.assertEqual(entries[0].mac_address, "a83c.a534.a128")

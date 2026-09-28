@@ -12,7 +12,7 @@ class MacLookupForm(forms.Form):
     mac_address = forms.CharField(
         max_length=17,
         label="MAC address",
-        help_text="Example: A83C.A534.A128",
+        help_text="Example: ac71.2edf.1092",
     )
 
     def clean_mac_address(self):
