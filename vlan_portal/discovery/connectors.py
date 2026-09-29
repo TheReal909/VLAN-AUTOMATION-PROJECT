@@ -60,11 +60,19 @@ class NetmikoReadOnlyConnector:
             )
             return output
         except Exception as exc:
+            diagnostic = f"{type(exc).__name__}: {exc}"
+            for secret in (self.username, self.password):
+                if secret:
+                    diagnostic = diagnostic.replace(secret, "[redacted]")
             self.command_trace.append(
-                {"switch": switch.name, "command": command, "output": "Command failed."}
+                {
+                    "switch": switch.name,
+                    "command": command,
+                    "output": f"Command failed: {diagnostic}",
+                }
             )
             raise DiscoveryError(
-                f"Read-only command '{command}' failed on {switch.name}; check command support, privilege, and timeout."
+                f"Read-only command '{command}' failed on {switch.name}; inspect the staff-only command trace for details."
             ) from exc
         finally:
             connection.disconnect()

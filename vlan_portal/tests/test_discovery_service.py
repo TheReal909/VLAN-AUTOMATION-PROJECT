@@ -150,6 +150,27 @@ class MacDiscoveryServiceTests(TestCase):
         with patch("netmiko.ConnectHandler", return_value=connection):
             with self.assertRaisesMessage(DiscoveryError, "show lldp neighbors detail"):
                 connector.find_neighbors(switch)
+        self.assertIn("RuntimeError: unsupported command", connector.command_trace[0]["output"])
+
+    def test_read_command_failure_redacts_credential_strings(self):
+        connector = NetmikoReadOnlyConnector("reader-secret", "password-secret")
+        connection = type("Connection", (), {})()
+
+        def fail_command(self, command, read_timeout):
+            raise RuntimeError("auth failed for reader-secret using password-secret")
+
+        connection.send_command = fail_command.__get__(connection)
+        connection.disconnect = lambda: None
+        switch = type("Switch", (), {"name": "MDF-01", "management_ip": "192.0.2.1"})()
+
+        with patch("netmiko.ConnectHandler", return_value=connection):
+            with self.assertRaises(DiscoveryError):
+                connector.find_neighbors(switch)
+
+        trace_output = connector.command_trace[0]["output"]
+        self.assertIn("[redacted]", trace_output)
+        self.assertNotIn("reader-secret", trace_output)
+        self.assertNotIn("password-secret", trace_output)
 
     def test_endpoint_class_is_decisive_even_if_port_name_says_uplink(self):
         mac = "a83c.a534.a128"
