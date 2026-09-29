@@ -180,7 +180,7 @@ class MacDiscoveryService:
         if family == Switch.ModelFamily.ICX_7250:
             return port > 48
         if family == Switch.ModelFamily.ICX_8200:
-            return (slot == 1 and port in {1, 2}) or port > 48
+            return (slot == 1 and port in {1, 2}) or (slot == 2 and port in {1, 2}) or port > 48
         return False
 
     def _resolve_neighbor(

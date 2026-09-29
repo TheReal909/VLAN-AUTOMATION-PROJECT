@@ -85,6 +85,30 @@ class MacDiscoveryServiceTests(TestCase):
         self.assertEqual(result.entry.interface_name, "1/1/5")
         self.assertEqual(connector.queried_switches, ["MDF-01", "IDF-01"])
 
+    def test_icx8200_mdf_port_1_2_2_follows_managed_idf_neighbor(self):
+        mac = "50cd.2219.c385"
+        connector = FakeConnector(
+            mac_results={
+                "MDF-01": [MacTableEntry(mac, 300, "1/2/2", False)],
+                "IDF-01": [MacTableEntry(mac, 300, "1/1/5", False)],
+            },
+            neighbors={
+                "MDF-01": [
+                    LldpNeighbor("ethernet 1/2/2", "IDF-01", "192.0.2.11", "Bridge, switch")
+                ],
+                "IDF-01": [],
+            },
+        )
+        self.mdf.model_family = Switch.ModelFamily.ICX_8200
+        self.idf.model_family = Switch.ModelFamily.ICX_8200
+
+        result = MacDiscoveryService(connector).locate(self.facility, mac)
+
+        self.assertEqual(result.switch, self.idf)
+        self.assertEqual(result.entry.interface_name, "1/1/5")
+        self.assertEqual([switch.name for switch in result.path], ["MDF-01", "IDF-01"])
+        self.assertEqual(connector.queried_switches, ["MDF-01", "IDF-01"])
+
     def test_service_stops_at_mdf_endpoint_even_when_vlan_is_tagged(self):
         mac = "aa:bb:cc:dd:ee:ff"
         connector = FakeConnector(
