@@ -86,7 +86,7 @@ class NetmikoReadOnlyConnector:
         return parse_lldp_neighbors(self._send(switch, "show lldp neighbors detail"))
 
     def find_port_name(self, switch: Switch, interface_name: str) -> str:
-        return parse_port_name(self._send(switch, f"show interfaces {interface_name}"))
+        return parse_port_name(self._send(switch, f"show interfaces ethernet {interface_name}"))
 
 
 @dataclass(frozen=True)

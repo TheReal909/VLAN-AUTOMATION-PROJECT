@@ -94,6 +94,17 @@ class DiscoveryParserTests(SimpleTestCase):
         send.assert_called_once_with(switch, "show mac-address a83c.a534.a128")
         self.assertEqual(entries[0].mac_address, "a83c.a534.a128")
 
+    @patch.object(NetmikoReadOnlyConnector, "_send")
+    def test_interface_description_uses_fastiron_ethernet_keyword(self, send):
+        send.return_value = "Port name: C2-CP_UPLNK_PT_IDF"
+        switch = type("Switch", (), {"name": "MDF-01"})()
+        connector = NetmikoReadOnlyConnector("reader", "secret")
+
+        port_name = connector.find_port_name(switch, "1/2/2")
+
+        send.assert_called_once_with(switch, "show interfaces ethernet 1/2/2")
+        self.assertEqual(port_name, "C2-CP_UPLNK_PT_IDF")
+
     @patch("netmiko.ConnectHandler")
     def test_each_read_command_opens_and_closes_its_own_ssh_session(self, connect):
         connection = connect.return_value
